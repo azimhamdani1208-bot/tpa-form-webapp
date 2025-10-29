@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BTS-TPA 2.0 — Borang Penilaian + Rubrik (Wording Tepat • Lengkap)</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Your CSS -->
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <header class="sticky-head border-b">
+    <div class="mx-auto max-w-7xl px-4 py-4 flex items-center gap-3">
+      <div class="flex-1">
+        <h1 class="text-xl font-semibold">BTS-TPA 2.0 — Borang Penilaian + Rubrik (Wording Tepat • Lengkap)</h1>
+        <p class="text-sm text-slate-500">Skala 1–5 berpandukan rubrik; klik “i” untuk deskriptor penuh atau halakan tetikus pada pilihan 1–5 untuk ringkasan.</p>
+      </div>
+      <div class="no-print flex gap-2">
+        <button id="btnSave" class="px-3 py-2 rounded-xl bg-sky-600 text-white hover:bg-sky-700">Simpan Draf</button>
+        <button id="btnLoad" class="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300">Muat Draf</button>
+        <button id="btnJSON" class="px-3 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Eksport JSON</button>
+        <button id="btnCSV" class="px-3 py-2 rounded-xl bg-amber-500 text-white hover:bg-amber-600">Eksport CSV</button>
+        <button id="btnSubmit" class="px-3 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">Hantar ke Google Sheets</button>
+        <button onclick="window.print()" class="px-3 py-2 rounded-xl bg-slate-800 text-white hover:bg-black">Cetak</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 py-6">
+    <!-- Metadata -->
+    <section class="mb-6 grid gap-4 sm:grid-cols-2">
+      <div class="bg-white rounded-2xl shadow p-4">
+        <label class="block text-sm font-medium">Nama Guru</label>
+        <input id="metaTeacher" class="mt-1 w-full rounded-xl border-slate-300" placeholder="Nama guru dinilai" />
+
+        <!-- Level + Subject dependent dropdowns -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="block text-sm font-medium">Tahap/Aras</label>
+            <select id="metaLevel" class="mt-1 w-full rounded-xl border-slate-300">
+              <option value="" disabled selected>Pilih tahap…</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Mata Pelajaran</label>
+            <select id="metaSubject" class="mt-1 w-full rounded-xl border-slate-300" disabled>
+              <option value="" disabled selected>Pilih subjek…</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- NEW: Cluster & Methods of Learning -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="block text-sm font-medium">Kluster</label>
+            <select id="metaCluster" class="mt-1 w-full rounded-xl border-slate-300">
+              <option value="" disabled selected>pilih/ select..</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Kaedah Pembelajaran</label>
+            <select id="metaMethod" class="mt-1 w-full rounded-xl border-slate-300">
+              <option value="" disabled selected>Pilih kaedah…</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-4">
+        <label class="block text-sm font-medium">Penilai</label>
+        <input id="metaEvaluator" class="mt-1 w-full rounded-xl border-slate-300" placeholder="Nama penilai" />
+        <div class="grid grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="block text-sm font-medium">Tarikh</label>
+            <input id="metaDate" type="date" class="mt-1 w-full rounded-xl border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Sekolah</label>
+            <select id="metaSchool" class="mt-1 w-full rounded-xl border-slate-300">
+              <option value="" disabled selected>Pilih sekolah…</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- NEW: Class/Tahun, Nama Kelas, Jumlah Pelajar -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+          <div>
+            <label class="block text-sm font-medium">Tahun / Class</label>
+            <select id="metaClassYear" class="mt-1 w-full rounded-xl border-slate-300">
+              <option value="" disabled selected>pilih/select..</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Nama Kelas</label>
+            <input id="metaClassName" class="mt-1 w-full rounded-xl border-slate-300" placeholder="Contoh: 7B / 5 Cemerlang" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Jumlah Pelajar</label>
+            <input id="metaStudentCount" type="number" min="0" class="mt-1 w-full rounded-xl border-slate-300" placeholder="cth: 28" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Guidance -->
+    <section class="mb-6 bg-white rounded-2xl shadow p-4">
+      <h2 class="text-lg font-semibold mb-2">Panduan Ringkas</h2>
+      <ul class="list-disc pl-5 text-sm text-slate-600 space-y-1">
+        <li>Skala: 1 = Tidak Memuaskan, 2 = Memuaskan, 3 = Baik, 4 = Sangat Baik, 5 = Cemerlang.</li>
+        <li>Klik <span class="inline-block px-2 py-0.5 text-xs bg-slate-100 rounded">i</span> di sebelah kod untuk deskriptor penuh; halakan tetikus pada Grade 1–5 untuk ringkasan.</li>
+      </ul>
+    </section>
+
+    <!-- Sections rendered here -->
+    <div id="formContainer" class="space-y-10"></div>
+
+    <!-- Totals -->
+    <section class="mt-10 bg-white rounded-2xl shadow p-6">
+      <h2 class="text-lg font-semibold mb-4">Keputusan Ringkas</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-xl border p-4">
+          <div class="text-sm text-slate-500">Purata Bahagian A</div>
+          <div id="avgA" class="text-2xl font-bold">–</div>
+        </div>
+        <div class="rounded-xl border p-4">
+          <div class="text-sm text-slate-500">Purata Bahagian B</div>
+          <div id="avgB" class="text-2xl font-bold">–</div>
+        </div>
+        <div class="rounded-xl border p-4">
+          <div class="text-sm text-slate-500">Purata Bahagian C</div>
+          <div id="avgC" class="text-2xl font-bold">–</div>
+        </div>
+        <div class="rounded-xl border p-4">
+          <div class="text-sm text-slate-500">Purata Keseluruhan</div>
+          <div id="avgAll" class="text-2xl font-bold">–</div>
+          <div class="text-sm" id="gradeAll"></div>
+        </div>
+      </div>
+    </section>
+
+    <p class="mt-6 text-xs text-slate-500">Deskriptor rubrik dipetik daripada “Handbook BTS-TPA 2.0 January 2021”.</p>
+  </main>
+
+  <!-- Rubric Modal -->
+  <dialog id="rubricModal" class="rounded-2xl w-11/12 md:w-3/4 lg:w-2/3">
+    <form method="dialog" class="p-0 m-0">
+      <div class="p-4 border-b flex items-start gap-3">
+        <div class="flex-1">
+          <h3 id="rubricTitle" class="text-lg font-semibold">Rubrik</h3>
+          <p id="rubricSubtitle" class="text-sm text-slate-500"></p>
+        </div>
+        <button class="px-2 py-1 rounded-lg bg-slate-100">Tutup</button>
+      </div>
+      <div class="p-4 overflow-auto max-h-[70vh]">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-slate-600 border-b">
+              <th class="py-2 pr-2 w-28">Gred</th>
+              <th class="py-2 pr-2">Deskriptor</th>
+            </tr>
+          </thead>
+          <tbody id="rubricBody"></tbody>
+        </table>
+      </div>
+    </form>
+  </dialog>
+<!-- put this just before app.js -->
+<script>
+  // TODO: replace with your real Apps Script Web App URL
+  window.SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycby-BgEA086OgM7MlyyzZNHjFNYGVVH0MujlhTNIFqNaxd9W68Tc_7Wz6QgVkqhOofpP6w/exec";
+  // optional: only if your Apps Script checks for it
+  window.API_KEY = "dev-or-random-key";
+</script>
+<script defer src="./app.js"></script>
+
+  <!-- Your JS -->
+  <script defer src="./app.js"></script>
+</body>
+</html>
+styles.css
+css
+Copy code
+@media print {
+  .no-print { display: none !important; }
+  .print-break { page-break-before: always; }
+}
+.rating-cell input { accent-color: #0ea5e9; }
+.sticky-head { position: sticky; top: 0; background: white; z-index: 30; }
+dialog::backdrop { background: rgba(2, 6, 23, 0.5); }
+textarea { resize: vertical; }
