@@ -1,6 +1,6 @@
 // -------------------- GOOGLE SHEETS ENDPOINT --------------------
 // TODO: paste your Apps Script Web App URL below
-const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycby-BgEA086OgM7MlyyzZNHjFNYGVVH0MujlhTNIFqNaxd9W68Tc_7Wz6QgVkqhOofpP6w/exec"; // e.g. https://script.google.com/macros/s/AKfycb.../exec
+const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzVPk-VoeiajejD4sRZ9FWRD_VB9lrXM3fqUkMGdsCTisdTYJ-dBYSVM9BkszfTu7eMsw/exec"; // e.g. https://script.google.com/macros/s/AKfycb.../exec
 const DEFAULT_API_KEY = "change-me"; // must match Apps Script
 
 const SHEETS_ENDPOINT = (typeof window !== "undefined" && window.SHEETS_ENDPOINT) || DEFAULT_SHEETS_ENDPOINT;
@@ -642,26 +642,25 @@ async function submitToSheets(){
     submitBtn.textContent = "Menghantar…";
   }
 
-  try{
-    const res = await fetch(SHEETS_ENDPOINT, {
-      method: "POST",
-      // Use a "simple" request header so that Apps Script does not need to
-      // reply to an OPTIONS preflight request (which caused "Failed to fetch").
-      headers: {"Content-Type":"text/plain;charset=utf-8"},
-      body: JSON.stringify(payload)
-    });
-    const text = await res.text();
-    if(!res.ok){ throw new Error(text || `HTTP ${res.status}`); }
-    alert("Berjaya dihantar ke Google Sheets.\nRespon: " + text);
-  }catch(err){
-    alert("Ralat menghantar ke Google Sheets: " + (err.message || err));
-  }finally{
-    if(submitBtn){
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalLabel || "Hantar ke Google Sheets";
-    }
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const sheet = SpreadsheetApp.openById("YOUR_SHEET_ID").getSheetByName("Form");
+    sheet.appendRow([new Date(), data.metaTeacher, data.metaSchool, JSON.stringify(data.ratings)]);
+
+    return ContentService
+      .createTextOutput("OK")
+      .setMimeType(ContentService.MimeType.TEXT)
+      .setHeader("Access-Control-Allow-Origin", "*")
+      .setHeader("Access-Control-Allow-Methods", "POST");
+  } catch (err) {
+    return ContentService
+      .createTextOutput("Error: " + err)
+      .setMimeType(ContentService.MimeType.TEXT)
+      .setHeader("Access-Control-Allow-Origin", "*");
   }
 }
+
 // -------------------- MODALS: Rubric --------------------
 const rubricModal = document.getElementById("rubricModal"); 
 const rubricBody = document.getElementById("rubricBody");
@@ -687,3 +686,4 @@ document.body.addEventListener("click", (e)=>{
   }
   rubricModal.showModal();
 });
+}
