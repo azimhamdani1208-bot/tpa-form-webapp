@@ -1,7 +1,10 @@
 // -------------------- GOOGLE SHEETS ENDPOINT --------------------
 // TODO: paste your Apps Script Web App URL below
-const SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycby-BgEA086OgM7MlyyzZNHjFNYGVVH0MujlhTNIFqNaxd9W68Tc_7Wz6QgVkqhOofpP6w/exec"; // e.g. https://script.google.com/macros/s/AKfycb.../exec
-const API_KEY = "change-me"; // must match Apps Script
+const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycby-BgEA086OgM7MlyyzZNHjFNYGVVH0MujlhTNIFqNaxd9W68Tc_7Wz6QgVkqhOofpP6w/exec"; // e.g. https://script.google.com/macros/s/AKfycb.../exec
+const DEFAULT_API_KEY = "change-me"; // must match Apps Script
+
+const SHEETS_ENDPOINT = (typeof window !== "undefined" && window.SHEETS_ENDPOINT) || DEFAULT_SHEETS_ENDPOINT;
+const API_KEY = (typeof window !== "undefined" && window.API_KEY) || DEFAULT_API_KEY;
 
 // -------------------- SCHOOL LIST (dropdown) --------------------
 const SCHOOLS = [
@@ -180,22 +183,22 @@ subjectSel.addEventListener("change", () => {
 // -------------------- SECTIONS --------------------
 const SECTIONS = [
   { id: "A", title: "Bahagian A: Pencapaian Pelajar", note: "Umur, peringkat dan kebolehan pelajar adalah diambil kira.", items: [
-    { code: "A1", label: "Pengetahuan Mata Pelajaran / Subject Knowledge" },
-    { code: "A2", label: "Kefahaman Mata Pelajaran" },
-    { code: "A3", label: "Pengaplikasian Mata Pelajaran" },
+    { code: "A1", label: "Pengetahuan Mata Pelajaran / Subject Knowledge", allowNA: true },
+    { code: "A2", label: "Kefahaman Mata Pelajaran", allowNA: true },
+    { code: "A3", label: "Pengaplikasian Mata Pelajaran", allowNA: true },
     { code: "A4", label: "Analisis dan Penilaian" },
     { code: "A5", label: "Kreativiti dalam Pembelajaran" },
   ]},
-  { id: "B", title: "Bahagian B: Pembelajaran Pelajar", note: "Umur, peringkat dan kebolehan pelajar adalah diambil kira.", items: [
-    { code: "B1", label: "Komunikasi" },
-    { code: "B2", label: "Persediaan" },
-    { code: "B3", label: "Penglibatan" },
-    { code: "B4", label: "Pengaplikasian Kemahiran Mata Pelajaran" },
-    { code: "B5", label: "Sikap Mandiri / Inisiatif" },
-    { code: "B6", label: "Kemahiran ICT" },
-    { code: "B7", label: "Kolaborasi" },
-    { code: "B8", label: "Penggunaan Sumber" },
-    { code: "B9", label: "Kebolehan dalam Menyelesaikan Tugasan" },
+{ id: "B", title: "Bahagian B: Pembelajaran Pelajar", note: "Umur, peringkat dan kebolehan pelajar adalah diambil kira.", items: [
+    { code: "B1", label: "Komunikasi", allowNA: true },
+    { code: "B2", label: "Persediaan", allowNA: true },
+    { code: "B3", label: "Penglibatan", allowNA: true },
+    { code: "B4", label: "Pengaplikasian Kemahiran Mata Pelajaran", allowNA: true },
+    { code: "B5", label: "Sikap Mandiri / Inisiatif", allowNA: true },
+    { code: "B6", label: "Kemahiran ICT", allowNA: true },
+    { code: "B7", label: "Kolaborasi", allowNA: true },
+    { code: "B8", label: "Penggunaan Sumber", allowNA: true },
+    { code: "B9", label: "Kebolehan dalam Menyelesaikan Tugasan", allowNA: true },
   ]},
   { id: "C", title: "Bahagian C: Pengajaran Guru", note: "6 Standard, 17 Kompetensi Teras.", items: [
     { code: "C1.1", label: "Menentukan Keupayaan Pelajar" },
@@ -463,6 +466,7 @@ function getDescriptorSnippet(code, level){
   return t.length > 160 ? t.slice(0,157)+"…" : t;
 }
 function renderSection(sec){
+  const showNA = sec.items.some(it => it.allowNA);
   const card = document.createElement("section");
   card.className = "bg-white rounded-2xl shadow p-4";
   card.innerHTML = `
@@ -486,6 +490,7 @@ function renderSection(sec){
             <th class="py-2 pr-2 text-center">3</th>
             <th class="py-2 pr-2 text-center">4</th>
             <th class="py-2 pr-2 text-center">5</th>
+            ${showNA ? '<th class="py-2 pr-2 text-center">N/A</th>' : ''}
             <th class="py-2 pr-2">Ulasan (Optional)</th>
           </tr>
         </thead>
@@ -504,10 +509,17 @@ function renderSection(sec){
     const tr = document.createElement("tr");
     tr.className = "border-b last:border-0 align-top";
     const hasRubric = !!RUBRICS[it.code];
+    const naCell = showNA ? `
+      <td class="py-2 pr-2 text-center rating-cell">
+        ${it.allowNA ? `<input type="radio" name="${it.code}" value="NA" aria-label="${it.code}=NA" title="Tidak berkenaan" />` : ""}
+      </td>
+    ` : "";
     tr.innerHTML = `
       <td class="py-2 pr-2 font-medium whitespace-nowrap">${it.code} ${hasRubric ? infoButton(it.code) : ""}</td>
       <td class="py-2 pr-2">${it.label}</td>
       ${[1,2,3,4,5].map(v => `
+              ${ratingCells}
+      ${naCell}
         <td class="py-2 pr-2 text-center rating-cell">
           <input type="radio" name="${it.code}" value="${v}" aria-label="${it.code}=${v}" title="${getDescriptorSnippet(it.code,v)}" />
         </td>
@@ -528,9 +540,17 @@ const avgCEl = document.getElementById("avgC");
 const avgAllEl = document.getElementById("avgAll");
 const gradeAllEl = document.getElementById("gradeAll");
 
-function getValue(name){ const c = document.querySelector(`input[name="${name}"]:checked`); return c ? Number(c.value) : null; }
-function sectionAverage(sec){ const vals = sec.items.map(it => getValue(it.code)).filter(v => v!==null); return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null; }
-function overallAverage(){ const codes = SECTIONS.flatMap(s=>s.items.map(it=>it.code)); const vals = codes.map(getValue).filter(v=>v!==null); return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null; }
+function getValue(name){
+  const c = document.querySelector(`input[name="${name}"]:checked`);
+  if(!c) return null;
+  return c.value === "NA" ? "NA" : Number(c.value);
+}
+function getNumericValue(name){
+  const v = getValue(name);
+  return typeof v === "number" ? v : null;
+}
+function sectionAverage(sec){ const vals = sec.items.map(it => getNumericValue(it.code)).filter(v => v!==null); return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null; }
+function overallAverage(){ const codes = SECTIONS.flatMap(s=>s.items.map(it=>it.code)); const vals = codes.map(getNumericValue).filter(v=>v!==null); return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null; }
 function mapGrade(avg){ if(avg===null) return {grade:"–",text:"Lengkapkan penilaian."}; const g = Math.max(1, Math.min(5, Math.round(avg))); const desc={1:"Tidak Memuaskan",2:"Memuaskan",3:"Baik",4:"Sangat Baik",5:"Cemerlang"}[g]; return {grade:g,text:desc}; }
 const fmt = n => n===null? "–" : (Math.round(n*100)/100).toFixed(2);
 function refresh(){
@@ -602,46 +622,43 @@ function fillData(data){
   }));
   refresh();
 }
-
-function toCSV(data){
-  const rows=[]; rows.push(["Field","Value"]);
-  Object.entries(data.meta).forEach(([k,v])=>rows.push([k,v]));
-  rows.push([]); rows.push(["Code","Rating","Comment"]);
-  SECTIONS.flatMap(s=>s.items).forEach(it=>rows.push([it.code, data.ratings[it.code] ?? "", (data.comments[it.code]||"").replace(/\n/g," ")]));
-  rows.push([]); rows.push(["Average A", data.averages.A ?? ""]); rows.push(["Average B", data.averages.B ?? ""]);
-  rows.push(["Average C", data.averages.C ?? ""]); rows.push(["Average Overall", data.averages.overall ?? ""]);
-  rows.push(["Mapped Grade", data.averages.mapped.grade ?? ""]); rows.push(["Mapped Text", data.averages.mapped.text ?? ""]);
-  return rows.map(r=>r.map(x=>{ const s=String(x ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; }).join(",")).join("\n");
-}
-function download(filename, content, mime){ const blob=new Blob([content],{type:mime}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename; a.click(); URL.revokeObjectURL(a.href); }
 document.getElementById("btnSave").addEventListener("click", ()=>{ localStorage.setItem("btstpa_form", JSON.stringify(collectData())); alert("Draf disimpan pada pelayar (localStorage)."); });
 document.getElementById("btnLoad").addEventListener("click", ()=>{ const raw=localStorage.getItem("btstpa_form"); if(!raw){ alert("Tiada draf ditemui."); return; } fillData(JSON.parse(raw)); alert("Draf dimuat."); });
-document.getElementById("btnJSON").addEventListener("click", ()=>{ const data=collectData(); download(`btstpa-${(data.meta?.metaTeacher||"guru").replace(/\s+/g,'_')}.json`, JSON.stringify(data,null,2), "application/json"); });
-document.getElementById("btnCSV").addEventListener("click", ()=>{ const data=collectData(); const csv=toCSV(data); download(`btstpa-${(data.meta?.metaTeacher||"guru").replace(/\s+/g,'_')}.csv`, csv, "text/csv;charset=utf-8"); });
-
 document.getElementById("btnSubmit")
   .addEventListener("click", submitToSheets);
 
-// -------------------- SUBMIT TO GOOGLE SHEETS --------------------
 async function submitToSheets(){
   if(!SHEETS_ENDPOINT){ alert("Set SHEETS_ENDPOINT first."); return; }
   const payload = collectData();
   payload.apiKey = API_KEY; // <— add this
 
+  const submitBtn = document.getElementById("btnSubmit");
+  const originalLabel = submitBtn?.textContent;
+  if(submitBtn){
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Menghantar…";
+  }
+
   try{
     const res = await fetch(SHEETS_ENDPOINT, {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
+      // Use a "simple" request header so that Apps Script does not need to
+      // reply to an OPTIONS preflight request (which caused "Failed to fetch").
+      headers: {"Content-Type":"text/plain;charset=utf-8"},
       body: JSON.stringify(payload)
     });
     const text = await res.text();
     if(!res.ok){ throw new Error(text || `HTTP ${res.status}`); }
     alert("Berjaya dihantar ke Google Sheets.\nRespon: " + text);
   }catch(err){
-    alert("Ralat menghantar ke Google Sheets: " + err.message);
+    alert("Ralat menghantar ke Google Sheets: " + (err.message || err));
+  }finally{
+    if(submitBtn){
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel || "Hantar ke Google Sheets";
+    }
   }
 }
-
 // -------------------- MODALS: Rubric --------------------
 const rubricModal = document.getElementById("rubricModal"); 
 const rubricBody = document.getElementById("rubricBody");
@@ -667,5 +684,68 @@ document.body.addEventListener("click", (e)=>{
   }
   rubricModal.showModal();
 });
+document.getElementById('btnSubmit').addEventListener('click', () => {
+  const data = {
+    teacher: document.getElementById('metaTeacher').value,
+    level: document.getElementById('metaLevel').value,
+    subject: document.getElementById('metaSubject').value,
+    cluster: document.getElementById('metaCluster').value,
+    method: document.getElementById('metaMethod').value,
+    evaluator: document.getElementById('metaEvaluator').value,
+    date: document.getElementById('metaDate').value,
+    school: document.getElementById('metaSchool').value,
+    classYear: document.getElementById('metaClassYear').value,
+    className: document.getElementById('metaClassName').value,
+    studentCount: document.getElementById('metaStudentCount').value,
+  };
 
-refresh();
+  fetch(window.SHEETS_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': window.API_KEY
+    },
+    body: JSON.stringify(data)
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('HTTP error ' + res.status);
+    return res.json();
+  })
+  .then(response => {
+    alert('✅ Berjaya dihantar ke Google Sheets!');
+    console.log('Server response:', response);
+  })
+  .catch(err => {
+    alert('❌ Gagal hantar ke Google Sheets. Ralat: ' + err.message);
+    console.error('Error:', err);
+  });
+});
+document.getElementById('btnSubmit').addEventListener('click', () => {
+  const data = {
+    apiKey: window.API_KEY, // match with your Apps Script 'change-me'
+    meta: {
+      metaTeacher: document.getElementById('metaTeacher').value,
+      metaLevel: document.getElementById('metaLevel').value,
+      metaSubject: document.getElementById('metaSubject').value,
+      metaCluster: document.getElementById('metaCluster').value,
+      metaMethod: document.getElementById('metaMethod').value,
+      metaEvaluator: document.getElementById('metaEvaluator').value,
+      metaDate: document.getElementById('metaDate').value,
+      metaSchool: document.getElementById('metaSchool').value,
+      metaClassYear: document.getElementById('metaClassYear').value,
+      metaClassName: document.getElementById('metaClassName').value,
+      metaStudentCount: document.getElementById('metaStudentCount').value
+    },
+    averages: {
+      A: document.getElementById('avgA').textContent || '',
+      B: document.getElementById('avgB').textContent || '',
+      C: document.getElementById('avgC').textContent || '',
+      overall: document.getElementById('avgAll').textContent || '',
+      mapped: {
+        grade: '' // optional
+      }
+    }
+  }; // ✅ close both objects here
+
+  refresh();
+});
