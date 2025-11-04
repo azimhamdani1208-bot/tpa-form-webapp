@@ -642,22 +642,45 @@ async function submitToSheets(){
     submitBtn.textContent = "Menghantar…";
   }
 
-function doPost(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
-    const sheet = SpreadsheetApp.openById("YOUR_SHEET_ID").getSheetByName("Form");
-    sheet.appendRow([new Date(), data.metaTeacher, data.metaSchool, JSON.stringify(data.ratings)]);
+    const response = await fetch(SHEETS_ENDPOINT, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-    return ContentService
-      .createTextOutput("OK")
-      .setMimeType(ContentService.MimeType.TEXT)
-      .setHeader("Access-Control-Allow-Origin", "*")
-      .setHeader("Access-Control-Allow-Methods", "POST");
+    const responseText = await response.text();
+    if (!response.ok) {
+      throw new Error(responseText || response.statusText || "Gagal menghantar borang.");
+    }
+
+    const trimmed = responseText.trim();
+    if (trimmed) {
+      let parsed;
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch (_) {
+        parsed = null;
+      }
+
+      const parsedOk = parsed && (parsed.ok === true || parsed.success === true || parsed.status === "ok");
+      if (!parsedOk && !/^ok$/i.test(trimmed)) {
+        throw new Error(trimmed);
+      }
+    }
+
+    alert("Borang berjaya dihantar.");
   } catch (err) {
-    return ContentService
-      .createTextOutput("Error: " + err)
-      .setMimeType(ContentService.MimeType.TEXT)
-      .setHeader("Access-Control-Allow-Origin", "*");
+    console.error("Failed to submit to Google Sheets", err);
+    alert(`Gagal menghantar borang: ${err?.message || err}`);
+  } finally {
+    if(submitBtn){
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel || "Hantar";
+    }
   }
 }
 
@@ -686,4 +709,3 @@ document.body.addEventListener("click", (e)=>{
   }
   rubricModal.showModal();
 });
-}
