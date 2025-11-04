@@ -1,6 +1,6 @@
 // -------------------- GOOGLE SHEETS ENDPOINT --------------------
 // TODO: paste your Apps Script Web App URL below
-const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzVPk-VoeiajejD4sRZ9FWRD_VB9lrXM3fqUkMGdsCTisdTYJ-dBYSVM9BkszfTu7eMsw/exec"; // e.g. https://script.google.com/macros/s/AKfycb.../exec
+const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzBvhtWm9hQJ1S5d7tFv-CqmDVOPe3hIzA07_0fErvjOZqJd1wEKrnSPIJnIpmG9RKBCw/exec"; // e.g. https://script.google.com/macros/s/AKfycb.../exec
 const DEFAULT_API_KEY = "change-me"; // must match Apps Script
 
 const SHEETS_ENDPOINT = (typeof window !== "undefined" && window.SHEETS_ENDPOINT) || DEFAULT_SHEETS_ENDPOINT;
@@ -627,60 +627,102 @@ function fillData(data){
 }
 document.getElementById("btnSave").addEventListener("click", ()=>{ localStorage.setItem("btstpa_form", JSON.stringify(collectData())); alert("Draf disimpan pada pelayar (localStorage)."); });
 document.getElementById("btnLoad").addEventListener("click", ()=>{ const raw=localStorage.getItem("btstpa_form"); if(!raw){ alert("Tiada draf ditemui."); return; } fillData(JSON.parse(raw)); alert("Draf dimuat."); });
+
+function downloadBlob(contents, fileName, mimeType){
+  const blob = new Blob([contents], { type: mimeType });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  URL.revokeObjectURL(link.href);
+  document.body.removeChild(link);
+}
+
+const btnJSON = document.getElementById("btnJSON");
+if(btnJSON){
+  btnJSON.addEventListener("click", () => {
+    const data = collectData();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const jsonString = JSON.stringify(data, null, 2);
+    downloadBlob(jsonString, `btstpa-${timestamp}.json`, "application/json");
+  });
+}
+
+function toCsvValue(value){
+  const str = value == null ? "" : String(value);
+  if(/[",\n]/.test(str)){
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function buildCsv(data){
+  const rows = [];
+  rows.push(["Field","Value"]);
+  metaFields.forEach(id => {
+    rows.push([id, data.meta?.[id] ?? ""]);
+  });
+  rows.push([]);
+  rows.push(["Section","Code","Label","Rating","Comment"]);
+  SECTIONS.forEach(section => {
+    section.items.forEach(item => {
+      const rating = data.ratings?.[item.code];
+      rows.push([
+        section.id,
+        item.code,
+        item.label,
+        rating == null ? "" : rating,
+        data.comments?.[item.code] ?? "",
+      ]);
+    });
+  });
+  rows.push([]);
+  rows.push(["Average A", data.averages?.A ?? ""]);
+  rows.push(["Average B", data.averages?.B ?? ""]);
+  rows.push(["Average C", data.averages?.C ?? ""]);
+  rows.push(["Average Overall", data.averages?.overall ?? ""]);
+  const mapped = data.averages?.mapped || {};
+  rows.push(["Mapped Grade", mapped.grade ?? ""]);
+  rows.push(["Mapped Grade Description", mapped.text ?? ""]);
+  return rows
+    .map(row => row.map(toCsvValue).join(","))
+    .join("\r\n");
+}
+
+const btnCSV = document.getElementById("btnCSV");
+if(btnCSV){
+  btnCSV.addEventListener("click", () => {
+    const data = collectData();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const csvString = buildCsv(data);
+    downloadBlob(csvString, `btstpa-${timestamp}.csv`, "text/csv;charset=utf-8");
+  });
+}
+
 document.getElementById("btnSubmit")
   .addEventListener("click", submitToSheets);
 
-async function submitToSheets(){
-  if(!SHEETS_ENDPOINT){ alert("Set SHEETS_ENDPOINT first."); return; }
-  const payload = collectData();
-  payload.apiKey = API_KEY; // <— add this
-
-  const submitBtn = document.getElementById("btnSubmit");
-  const originalLabel = submitBtn?.textContent;
-  if(submitBtn){
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Menghantar…";
-  }
+async function submitForm() {
+  const payload = {
+    metaTeacher: "Cg Azim",
+    metaSchool: "SM Rimba II",
+    ratings: { "TPA1.1": 4, "TPA1.2": 5 },
+  };
 
   try {
-    const response = await fetch(SHEETS_ENDPOINT, {
+    const response = await fetch(window.SHEETS_ENDPOINT, {
       method: "POST",
-      mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload),
     });
 
-    const responseText = await response.text();
-    if (!response.ok) {
-      throw new Error(responseText || response.statusText || "Gagal menghantar borang.");
-    }
-
-    const trimmed = responseText.trim();
-    if (trimmed) {
-      let parsed;
-      try {
-        parsed = JSON.parse(trimmed);
-      } catch (_) {
-        parsed = null;
-      }
-
-      const parsedOk = parsed && (parsed.ok === true || parsed.success === true || parsed.status === "ok");
-      if (!parsedOk && !/^ok$/i.test(trimmed)) {
-        throw new Error(trimmed);
-      }
-    }
-
-    alert("Borang berjaya dihantar.");
-  } catch (err) {
-    console.error("Failed to submit to Google Sheets", err);
-    alert(`Gagal menghantar borang: ${err?.message || err}`);
-  } finally {
-    if(submitBtn){
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalLabel || "Hantar";
-    }
+    const text = await response.text();
+    console.log("Response from server:", text);
+    alert("✅ Borang berjaya dihantar!");
+  } catch (error) {
+    console.error("Error:", error);
+    alert("❌ Gagal menghantar borang: " + error.message);
   }
 }
 
