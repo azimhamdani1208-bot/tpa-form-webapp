@@ -509,21 +509,27 @@ function renderSection(sec){
     const tr = document.createElement("tr");
     tr.className = "border-b last:border-0 align-top";
     const hasRubric = !!RUBRICS[it.code];
-    const naCell = showNA ? `
+    const ratingCells = [1, 2, 3, 4, 5]
+      .map(
+        (v) => `
+      <td class="py-2 pr-2 text-center rating-cell">
+        <input type="radio" name="${it.code}" value="${v}" aria-label="${it.code}=${v}" title="${getDescriptorSnippet(it.code, v)}" />
+      </td>`
+      )
+      .join("");
+    const naCell = showNA
+      ? `
       <td class="py-2 pr-2 text-center rating-cell">
         ${it.allowNA ? `<input type="radio" name="${it.code}" value="NA" aria-label="${it.code}=NA" title="Tidak berkenaan" />` : ""}
       </td>
-    ` : "";
+    `
+      : "";
     tr.innerHTML = `
       <td class="py-2 pr-2 font-medium whitespace-nowrap">${it.code} ${hasRubric ? infoButton(it.code) : ""}</td>
       <td class="py-2 pr-2">${it.label}</td>
-      ${[1,2,3,4,5].map(v => `
-              ${ratingCells}
+   ${ratingCells}
       ${naCell}
-        <td class="py-2 pr-2 text-center rating-cell">
-          <input type="radio" name="${it.code}" value="${v}" aria-label="${it.code}=${v}" title="${getDescriptorSnippet(it.code,v)}" />
-        </td>
-      `).join("")}
+ 
       <td class="py-2 pr-2 min-w-[220px]">
         <textarea name="${it.code}_comment" class="w-full rounded-lg border-slate-300" rows="1" placeholder="Catatan ringkas..."></textarea>
       </td>
@@ -557,9 +563,6 @@ function refresh(){
   const a = sectionAverage(SECTIONS[0]);
   const b = sectionAverage(SECTIONS[1]);
   const c = sectionAverage(SECTIONS[2]);
-  document.getElementById("avg-A").textContent = fmt(a);
-  document.getElementById("avg-B").textContent = fmt(b);
-  document.getElementById("avg-C").textContent = fmt(c);
   avgAEl.textContent = fmt(a); avgBEl.textContent = fmt(b); avgCEl.textContent = fmt(c);
   const all = overallAverage();
   avgAllEl.textContent = fmt(all);
@@ -683,69 +686,4 @@ document.body.addEventListener("click", (e)=>{
     });
   }
   rubricModal.showModal();
-});
-document.getElementById('btnSubmit').addEventListener('click', () => {
-  const data = {
-    teacher: document.getElementById('metaTeacher').value,
-    level: document.getElementById('metaLevel').value,
-    subject: document.getElementById('metaSubject').value,
-    cluster: document.getElementById('metaCluster').value,
-    method: document.getElementById('metaMethod').value,
-    evaluator: document.getElementById('metaEvaluator').value,
-    date: document.getElementById('metaDate').value,
-    school: document.getElementById('metaSchool').value,
-    classYear: document.getElementById('metaClassYear').value,
-    className: document.getElementById('metaClassName').value,
-    studentCount: document.getElementById('metaStudentCount').value,
-  };
-
-  fetch(window.SHEETS_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': window.API_KEY
-    },
-    body: JSON.stringify(data)
-  })
-  .then(res => {
-    if (!res.ok) throw new Error('HTTP error ' + res.status);
-    return res.json();
-  })
-  .then(response => {
-    alert('✅ Berjaya dihantar ke Google Sheets!');
-    console.log('Server response:', response);
-  })
-  .catch(err => {
-    alert('❌ Gagal hantar ke Google Sheets. Ralat: ' + err.message);
-    console.error('Error:', err);
-  });
-});
-document.getElementById('btnSubmit').addEventListener('click', () => {
-  const data = {
-    apiKey: window.API_KEY, // match with your Apps Script 'change-me'
-    meta: {
-      metaTeacher: document.getElementById('metaTeacher').value,
-      metaLevel: document.getElementById('metaLevel').value,
-      metaSubject: document.getElementById('metaSubject').value,
-      metaCluster: document.getElementById('metaCluster').value,
-      metaMethod: document.getElementById('metaMethod').value,
-      metaEvaluator: document.getElementById('metaEvaluator').value,
-      metaDate: document.getElementById('metaDate').value,
-      metaSchool: document.getElementById('metaSchool').value,
-      metaClassYear: document.getElementById('metaClassYear').value,
-      metaClassName: document.getElementById('metaClassName').value,
-      metaStudentCount: document.getElementById('metaStudentCount').value
-    },
-    averages: {
-      A: document.getElementById('avgA').textContent || '',
-      B: document.getElementById('avgB').textContent || '',
-      C: document.getElementById('avgC').textContent || '',
-      overall: document.getElementById('avgAll').textContent || '',
-      mapped: {
-        grade: '' // optional
-      }
-    }
-  }; // ✅ close both objects here
-
-  refresh();
 });
