@@ -28,7 +28,7 @@
     "metaStudentCount",
   ];
 
-  const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbw0OanqoZbUBucfUXMkGvxT1Wg4XwKp-U4LL2ZpICdmSRzCraO9W_1dRJhkPuiUc_JOcA/exec";
+  const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyl8EpsOPEJjXLU-DQ-_NmdD63KQJpQ2lbrUiysfoye9qI3StWgrn0eA_WxG9PJqwO_EQ/exec";
   const DEFAULT_API_KEY = "";
 
   const SHEETS_ENDPOINT = (typeof window !== "undefined" && window.SHEETS_ENDPOINT) || DEFAULT_SHEETS_ENDPOINT;
@@ -1028,28 +1028,24 @@ const RUBRICS = {
       return;
     }
 
-  const button = elements.btnSubmit;
+ const button = elements.btnSubmit;
     const originalLabel = button ? button.textContent : "";
     if (button) {
       button.disabled = true;
       button.textContent = "Menghantar…";
     }
 
-    try {
+   try {
       const payload = collectData();
       if (API_KEY) {
         payload.apiKey = API_KEY;
       }
-      const headers = {
-        "Content-Type": "application/json",
-      };
-      if (API_KEY) {
-        headers["X-API-Key"] = API_KEY;
-      }
       const response = await fetch(SHEETS_ENDPOINT, {
         method: "POST",
         mode: "cors",
-        headers,
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
         body: JSON.stringify(payload),
       });
       const text = await response.text();
