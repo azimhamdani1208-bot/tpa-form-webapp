@@ -28,7 +28,7 @@
     "metaStudentCount",
   ];
 
-  const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyRaXAerMGtZFXJHXwAHiuuEF3X7cvNwWVTPtGDvqEy7NhU-0EHFpkjTQr668Ujnu98xg/exec";
+  const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbw0OanqoZbUBucfUXMkGvxT1Wg4XwKp-U4LL2ZpICdmSRzCraO9W_1dRJhkPuiUc_JOcA/exec";
   const DEFAULT_API_KEY = "";
 
   const SHEETS_ENDPOINT = (typeof window !== "undefined" && window.SHEETS_ENDPOINT) || DEFAULT_SHEETS_ENDPOINT;
@@ -1028,29 +1028,27 @@ const RUBRICS = {
       return;
     }
 
-    const button = elements.btnSubmit;
+  const button = elements.btnSubmit;
     const originalLabel = button ? button.textContent : "";
     if (button) {
       button.disabled = true;
       button.textContent = "Menghantar…";
     }
-try {
+
+    try {
       const payload = collectData();
       if (API_KEY) {
         payload.apiKey = API_KEY;
       }
-      const headers = {};
+      const headers = {
+        "Content-Type": "application/json",
+      };
       if (API_KEY) {
-        headers["Content-Type"] = "application/json";
         headers["X-API-Key"] = API_KEY;
-      } else {
-        // Use a "simple" request header to avoid CORS preflight requests that
-        // Google Apps Script cannot respond to. The payload is still JSON so we
-        // can parse it on the server.
-        headers["Content-Type"] = "text/plain;charset=utf-8";
       }
       const response = await fetch(SHEETS_ENDPOINT, {
         method: "POST",
+        mode: "cors",
         headers,
         body: JSON.stringify(payload),
       });
@@ -1058,22 +1056,21 @@ try {
       if (!response.ok) {
         throw new Error(`Status ${response.status}: ${text}`);
       }
-      if (!/ok/i.test(text)) {
-        // Apps Script might return JSON, fallback to simple OK text
-        try {
-          const parsed = JSON.parse(text);
-          if (!parsed.success) {
-            throw new Error(parsed.error || text);
-          }
-        } catch (parseErr) {
-          // ignore JSON parse failure; treat as success message
-        }
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (parseErr) {
+        // fall back to treating raw text as an error message
+        throw new Error(text || "Respons tidak diketahui daripada pelayan.");
+      }
+      if (!parsed.success) {
+        throw new Error(parsed.error || "Respons pelayan tidak sah.");
       }
       alert("✅ Borang berjaya dihantar ke Google Sheets.");
     } catch (error) {
       console.error("Submit error", error);
       alert(`❌ Gagal menghantar borang: ${error.message}`);
-    } finally {
+    } finally { 
       if (button) {
         button.disabled = false;
         button.textContent = originalLabel || "Hantar ke Google Sheets";
