@@ -28,7 +28,7 @@
     "metaStudentCount",
   ];
 
-  const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx0mqtezIYMVXXemhH_EtAj8a6ZTpelx5LupUogceYDMno29QpX_P0OfpCtcehXYismog/exec";
+  const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyRaXAerMGtZFXJHXwAHiuuEF3X7cvNwWVTPtGDvqEy7NhU-0EHFpkjTQr668Ujnu98xg/exec";
   const DEFAULT_API_KEY = "";
 
   const SHEETS_ENDPOINT = (typeof window !== "undefined" && window.SHEETS_ENDPOINT) || DEFAULT_SHEETS_ENDPOINT;
@@ -1036,7 +1036,10 @@ const RUBRICS = {
     }
 
     try {
-      const payload = collectData();
+     const payload = collectData();
+      if (API_KEY) {
+        payload.apiKey = API_KEY;
+      }
       const headers = { "Content-Type": "application/json" };
       if (API_KEY) {
         headers["X-API-Key"] = API_KEY;
