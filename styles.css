@@ -2,7 +2,8 @@
   .no-print { display: none !important; }
   .print-break { page-break-before: always; }
 }
+
 .rating-cell input { accent-color: #0ea5e9; }
-.sticky-head { position: sticky; top: 0; background: white; z-index: 30; }
+.sticky-head { position: sticky; top: 0; z-index: 30; background: white; }
 dialog::backdrop { background: rgba(2, 6, 23, 0.5); }
 textarea { resize: vertical; }

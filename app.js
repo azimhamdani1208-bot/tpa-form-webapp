@@ -1,233 +1,428 @@
-// -------------------- GOOGLE SHEETS ENDPOINT --------------------
-// TODO: paste your Apps Script Web App URL below
-const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbzBvhtWm9hQJ1S5d7tFv-CqmDVOPe3hIzA07_0fErvjOZqJd1wEKrnSPIJnIpmG9RKBCw/exec"; // e.g. https://script.google.com/macros/s/AKfycb.../exec
-const DEFAULT_API_KEY = "change-me"; // must match Apps Script
+(() => {
+  "use strict";
 
-const SHEETS_ENDPOINT = (typeof window !== "undefined" && window.SHEETS_ENDPOINT) || DEFAULT_SHEETS_ENDPOINT;
-const API_KEY = (typeof window !== "undefined" && window.API_KEY) || DEFAULT_API_KEY;
+  // ------------------------------------------------------------
+  // Configuration & constants
+  // ------------------------------------------------------------
+  const STORAGE_KEY = "btstpa_form";
+  const RATING_SCALE = [1, 2, 3, 4, 5];
+  const GRADE_LABELS = {
+    1: "Tidak Memuaskan",
+    2: "Memuaskan",
+    3: "Baik",
+    4: "Sangat Baik",
+    5: "Cemerlang",
+  };
 
-// -------------------- SCHOOL LIST (dropdown) --------------------
-const SCHOOLS = [
-  "Maktab Anthony Abell","Maktab Duli Pg Muda Al-Muhtadee Billah","Maktab Sains Paduka Seri Begawan Sultan","Maktab Sultan Omar Ali Saifuddin",
-  "Pusat Tingkatan Enam Belait","Pusat Tingkatan Enam Meragang","Pusat Tingkatan Enam Sengkurong","Pusat Tingkatan Enam Tutong",
-  "Sekolah Menengah Awang Semaun","Sekolah Menengah Berakas","Sekolah Menengah Katok","Sekolah Menengah Lambak Kiri","Sekolah Menengah Masin",
-  "Sekolah Menengah Menglait","Sekolah Menengah Muda Hashim","Sekolah Menengah Pehin Datu Seri Maharaja",
-  "Sekolah Menengah Pengiran Isteri Hajah Mariam","Sekolah Menengah Perdana Wazir","Sekolah Menengah Pg Anak Puteri Hajah Masna",
-  "Sekolah Menengah Pg Anak Puteri Hajah Rashidah Sa'adatul Bolkiah","Sekolah Menengah Pg Jaya Negara Pg Haji Abu Bakar",
-  "Sekolah Menengah Raja Isteri Pg Anak Saleha","Sekolah Menengah Rimba","Sekolah Menengah Rimba II","Sekolah Menengah Sayyidina ‘Umar Al-Khattab",
-  "Sekolah Menengah Sayyidina Abu Bakar","Sekolah Menengah Sayyidina Ali","Sekolah Menengah Sayyidina Hasan","Sekolah Menengah Sayyidina Husain",
-  "Sekolah Menengah Sayyidina Othman Tutong","Sekolah Menengah Sufri Bolkiah","Sekolah Menengah Sultan Hassan Bangar",
-  "Sekolah Menengah Sultan Muhammad Jamalul Alam","Sekolah Menengah Sultan Sharif Ali","Sekolah Menengah Tanjong Maya",
-  "Sekolah Rendah Abdul Rashid Tanjong Maya","Sekolah Rendah Ahmad Tajuddin","Sekolah Rendah Amar Pahlawan","Sekolah Rendah Amo",
-  "Sekolah Rendah Anggerek Desa","Sekolah Rendah Awang Haji Mohd Yusof Katimahar","Sekolah Rendah Bakiau","Sekolah Rendah Batang Mitus",
-  "Sekolah Rendah Batu Marang","Sekolah Rendah Bebuloh","Sekolah Rendah Bendahara Lama","Sekolah Rendah Bendahara Sakam Bunut",
-  "Sekolah Rendah Bengkurong","Sekolah Rendah Benutan","Sekolah Rendah Berakas Garrison","Sekolah Rendah Beribi Telanai",
-  "Sekolah Rendah Binturan","Sekolah Rendah Birau","Sekolah Rendah Bukit Panggal","Sekolah Rendah Bukit Udal","Sekolah Rendah Danau",
-  "Sekolah Rendah Dato Basir","Sekolah Rendah Dato Maharaja Setia Dian Sukang","Sekolah Rendah Dato Marsal","Sekolah Rendah Dato Mohd Yassin",
-  "Sekolah Rendah Dato Othman","Sekolah Rendah Dato Pemanca Saging Ukong","Sekolah Rendah Datu Mahawangsa Lambak",
-  "Sekolah Rendah Datu Ratna Hj Muhd Jaafar Kiarong","Sekolah Rendah Delima Satu","Sekolah Rendah Haji Mohd Jaafar Maun Kiulap",
-  "Sekolah Rendah Haji Mohd Salleh Sungai Hanching","Sekolah Rendah Haji Tarif","Sekolah Rendah Jerudong","Sekolah Rendah Junjongan",
-  "Sekolah Rendah Kampong Bukit","Sekolah Rendah Kampong Mata-Mata","Sekolah Rendah Kampong Menengah","Sekolah Rendah Kapok, Muara",
-  "Sekolah Rendah Kasat","Sekolah Rendah Katok A","Sekolah Rendah Katok B","Sekolah Rendah Keriam","Sekolah Rendah Kiudang",
-  "Sekolah Rendah Kuala Belait","Sekolah Rendah Labi","Sekolah Rendah Labu Estate","Sekolah Rendah Lambak Kanan Jalan 49",
-  "Sekolah Rendah Lamunin","Sekolah Rendah Lubok Pulau","Sekolah Rendah Lumapas","Sekolah Rendah Lumut","Sekolah Rendah Mabohai",
-  "Sekolah Rendah Masin","Sekolah Rendah Melilas","Sekolah Rendah Mentiri","Sekolah Rendah Merangking","Sekolah Rendah Muda Hashim",
-  "Sekolah Rendah Muhammad Alam","Sekolah Rendah Mulaut","Sekolah Rendah Nakhoda Abdul Rashid Menunggol","Sekolah Rendah Negalang",
-  "Sekolah Rendah Orang Kaya Ali Wanika Setia Diraja, Kupang","Sekolah Rendah Orang Kaya Besar Imas Subok",
-  "Sekolah Rendah Orang Kaya Panglima Barandai Bukit Sawat","Sekolah Rendah Orang Kaya Setia Bakti Kilanas",
-  "Sekolah Rendah Paduka Seri Begawan Sultan Omar Ali Saifuddien","Sekolah Rendah Panaga","Sekolah Rendah Panchong",
-  "Sekolah Rendah Panchor Murai","Sekolah Rendah Panglima Barudin Limau Manis","Sekolah Rendah Pantai Berakas",
-  "Sekolah Rendah Pehin Dato Jamil","Sekolah Rendah Penanjong","Sekolah Rendah Penapar",
-  "Sekolah Rendah Pengiran Anak Puteri Besar Sungai Kebun","Sekolah Rendah Pengiran Dipa Negara Pengiran Jaya, Sengkarai",
-  "Sekolah Rendah Pengiran Kesuma Negara Bukit Beruang","Sekolah Rendah Pengiran Muda Mahkota",
-  "Sekolah Rendah Pengiran Pekerma Setia Diraja Sahibul Bandar","Sekolah Rendah Pengiran Setia Jaya Pengiran Abdul Momin, Kg Pandan",
-  "Sekolah Rendah Pengiran Setia Negara Pengiran Mohd Yusof","Sekolah Rendah Pengkalan Batu",
-  "Sekolah Rendah Perpindahan Kampong Bukit Beruang II","Sekolah Rendah Perpindahan Kg Lambak Kanan Jalan 10",
-  "Sekolah Rendah Pintu Malim","Sekolah Rendah Pulaie","Sekolah Rendah Puni","Sekolah Rendah Pusar Ulak","Sekolah Rendah Putat",
-  "Sekolah Rendah Raja Isteri Fatimah","Sekolah Rendah Rambai","Sekolah Rendah Rataie","Sekolah Rendah Rimba I",
-  "Sekolah Rendah Rimba II","Sekolah Rendah Rimba III","Sekolah Rendah Saba Darat","Sekolah Rendah Selangan",
-  "Sekolah Rendah Selapon","Sekolah Rendah Semabat","Sekolah Rendah Sengkurong","Sekolah Rendah Serasa","Sekolah Rendah Sinaut",
-  "Sekolah Rendah Sultan Abdul Bubin Sungai Besar","Sekolah Rendah Sultan Hashim Batu Apoi","Sekolah Rendah Sultan Hassan Bangar",
-  "Sekolah Rendah Sultan Umar Ali Saifuddien Muara","Sekolah Rendah Sungai Liang","Sekolah Rendah Sungai Siamas",
-  "Sekolah Rendah Sungai Tali Lumut II, Belait","Sekolah Rendah Sungai Teraban","Sekolah Rendah Tanah Jambu",
-  "Sekolah Rendah Tanjong Kindana","Sekolah Rendah Tentera Laut Diraja Brunei","Sekolah Rendah Tumpuan Telisai",
-  "Sekolah Rendah Tungku","Sekolah Rendah Tutong Kem","Sekolah Sukan","Sekolah Tinggi Perempuan Raja isteri"
-];
-const _set = new Set(SCHOOLS.map(s => s.trim()));
-const SCHOOLS_SORTED = Array.from(_set).sort((a,b) => a.localeCompare(b, "ms"));
-function populateSchoolDropdown() {
-  const sel = document.getElementById("metaSchool");
-  if (!sel) return;
-  sel.querySelectorAll("option:not([disabled])").forEach(o => o.remove());
-  SCHOOLS_SORTED.forEach(name => {
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
-    sel.appendChild(opt);
-  });
-}
-document.addEventListener("DOMContentLoaded", populateSchoolDropdown);
+  const metaFieldIds = [
+    "metaTeacher",
+    "metaLevel",
+    "metaSubject",
+    "metaEvaluator",
+    "metaDate",
+    "metaSchool",
+    "metaCluster",
+    "metaMethod",
+    "metaClassYear",
+    "metaClassName",
+    "metaStudentCount",
+  ];
 
-// -------------------- CLASS / CLUSTER / METHODS --------------------
-const CLASS_YEARS = ["Pra","Y1","Y2","Y3","Y4","Y5","Y6","Y7","Y8","Y9","Y10","Y11","PU1","PU2","Multiple Level"];
-const CLUSTERS = ["C_1","C_2","C_3","C_4","C_5","C_6"];
-const METHODS_OF_LEARNING = [
-  "Pembelajaran di Sekolah / Study at School (S@S)",
-  "S@S (Dengan penjarakan sosial / Social Distancing)",
-  "Pembelajaran dan Pengajaran dalam Talian / Online Lessons",
-  "Home Learning Packs (HLP)"
-];
-function populateSimpleSelect(id, values){
-  const sel = document.getElementById(id);
-  if(!sel) return;
-  sel.querySelectorAll("option:not([disabled])").forEach(o=>o.remove());
-  values.forEach(v=>{
-    const opt=document.createElement("option");
-    opt.value=v; opt.textContent=v; sel.appendChild(opt);
-  });
-}
-document.addEventListener("DOMContentLoaded", ()=>{
-  populateSimpleSelect("metaClassYear", CLASS_YEARS);
-  populateSimpleSelect("metaCluster", CLUSTERS);
-  populateSimpleSelect("metaMethod", METHODS_OF_LEARNING);
-});
+  const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbx0mqtezIYMVXXemhH_EtAj8a6ZTpelx5LupUogceYDMno29QpX_P0OfpCtcehXYismog/exec";
+  const DEFAULT_API_KEY = "";
 
-// -------------------- LEVEL → SUBJECTS (DEPENDENT) --------------------
-const LEVEL_SUBJECTS = {
-  "Pra-Sekolah": [
-    "PRA - LITERACY (ENGLISH)","PRA - LITERASI (BAHASA MELAYU)","PRA - NUMERACY / MATHS","PRA - AWAL SAINS",
-    "PRA - SENI / KREATIF","PRA - ASUHAN BUDI","PRA - UGAMA","PRA - ICT"
-  ],
-  "Sekolah Rendah (Primary)": [
-    "PRI - BAHASA MELAYU","PRI - ENGLISH LANGUAGE","PRI - MATHEMATICS","PRI - SCIENCE",
-    "PRI - PENGETAHUAN UGAMA ISLAM","PRI - SOCIAL STUDIES","PRI - ART & CRAFT / DESIGN",
-    "PRI - PENDIDIKAN JASMANI","PRI - MIB","PRI - ICT","SENA - MATEMATIK","SENA - BAHASA MELAYU","SENA - LAIN-LAIN/ OTHERS"
-  ],
-  "Integrated Curriculum (Primary Extension)": [
-    "INTEGRATED CURRICULUM - ASAS PENGETAHUAN UGAMA ISLAM",
-    "INTEGRATED CURRICULUM - LITERASI BAHASA MELAYU (MIB)",
-    "INTEGRATED CURRICULUM - LITERASI BAHASA MELAYU (LRB)",
-    "INTEGRATED CURRICULUM - ENGLISH LITERACY (SCIENCE)",
-    "INTEGRATED CURRICULUM - ENGLISH LITERACY (ICT)",
-    "INTEGRATED CURRICULUM - NUMERACY",
-    "INTEGRATED CURRICULUM - PHYSICAL EDUCATION"
-  ],
-  "Menengah Bawah (Lower Secondary)": [
-    "LSEC - BAHASA MELAYU","LSEC - ENGLISH LANGUAGE","LSEC - MATHEMATICS","LSEC - SCIENCE",
-    "LSEC - PENGETAHUAN UGAMA ISLAM","LSEC - MIB","LSEC - PENDIDIKAN JASMANI","LSEC - BAT",
-    "LSEC - SOCIAL STUDIES","LSEC - MARINE SCIENCE","LSEC - ARABIC (OPTION)","LSEC - DRAMA (OPTION)",
-    "LSEC - COMPUTER (OPTION)","LSEC - JAPANESE (OPTION)","LSEC - FRENCH (OPTION)","LSEC - LAIN-LAIN/ OTHERS"
-  ],
-  "Menengah Atas (Upper Secondary)": [
-    "USEC - ENGLISH LANGUAGE","USEC - BAHASA MELAYU","USEC - LITERATURE IN ENGLISH","USEC - MALAY LITERATURE",
-    "USEC - ISLAMIC RELIGIOUS KNOWLEDGE","USEC - ULUM AL-QURAN","USEC - HAFAZ AL-QURAN","USEC - TAFSIR AL-QURAN",
-    "USEC - HISTORY (MODERN WORLD AFFAIRS)","USEC - HISTORY","USEC - COMPUTER SCIENCE","USEC - GEOGRAPHY",
-    "USEC - SOCIOLOGY","USEC - ECONOMICS","USEC - ARABIC","USEC - MATHEMATICS SYALLABUS D",
-    "USEC - ADDITIONAL MATHEMATICS","USEC - STATISTICS","USEC - AGRICULTURE","USEC - PHYSICS",
-    "USEC - CHEMISTRY","USEC - BIOLOGY","USEC - COMBINED SCIENCE","USEC - DESIGN AND TECHNOLOGY",
-    "USEC - FOOD AND NUTRITION","USEC - ART & DESIGN","USEC - TRAVEL AND TOURISM","USEC - COMMERCE",
-    "USEC - COMMERCIAL STUDIES","USEC - MARINE SCIENCE","USEC - JAPANESE","USEC - ACCOUNTING",
-    "USEC - BUSINESS STUDIES","USEC - PRAVOCATIONAL SUBJECTS","USEC - BTEC SUBJECTS","USEC - TARBIYAH ISLAM",
-    "USEC - MIB","USEC - OTHERS"
-  ],
-  "IGCSE Level": [
-    "IGCSE PHYSICAL EDUCATION","IGCSE ICT","IGCSE DESIGN AND TECHNOLOGY","IGCSE BUSINESS STUDIES",
-    "IGCSE ACCOUNTING","IGCSE TRAVEL AND TOURISM","IGCSE ENGLISH AS A SECOND LANGUAGE (CORE)",
-    "IGCSE ENGLISH AS A SECOND LANGUAGE (EXTENDED)","IGCSE MARINE SCIENCE","IGCSE JAPANESE",
-    "IGCSE FRENCH","IGCSE MATHEMATICS (CORE)","IGCSE MATHEMATICS (EXTENDED)"
-  ],
-  "Pra-U / Sixth Form": [
-    "SF - GENERAL PAPER","SF - LANGUAGE AND LITERATURE IN ENGLISH","SF - HAFAZ AL-QURAN","SF - SYARIAH","SF - USULUDDIN","SF - LAW",
-    "SF - ENGLISH LANGUAGE","SF - BAHASA MELAYU","SF - FURTHER MATHEMATICS","SF - FOOD STUDIES","SF - HISTORY",
-    "SF - TRAVEL AND TOURISM","SF - PHYSICAL EDUCATION","SF - COMPUTER SCIENCE","SF - BUSINESS","SF - THINKING SKILLS",
-    "SF - LITERATURE IN ENGLISH","SF - GEOGRAPHY","SF - PSYCHOLOGY","SF - SOCIOLOGY","SF - BIOLOGY","SF - CHEMISTRY","SF - PHYSICS",
-    "SF - ART AND DESIGN","SF - DESIGN AND TECHNOLOGY","SF - ACCOUNTING","SF - ECONOMICS","SF - MATHEMATICS","SF - APPLIED ICT","SF - OTHERS"
-  ]
-};
+  const SHEETS_ENDPOINT = (typeof window !== "undefined" && window.SHEETS_ENDPOINT) || DEFAULT_SHEETS_ENDPOINT;
+  const API_KEY = (typeof window !== "undefined" && window.API_KEY) || DEFAULT_API_KEY;
 
-const levelSel = document.getElementById("metaLevel");
-const subjectSel = document.getElementById("metaSubject");
+  // ------------------------------------------------------------
+  // Static data
+  // ------------------------------------------------------------
+  const SCHOOLS = [
+    "Maktab Anthony Abell",
+    "Maktab Duli Pg Muda Al-Muhtadee Billah",
+    "Maktab Sains Paduka Seri Begawan Sultan",
+    "Maktab Sultan Omar Ali Saifuddin",
+    "Pusat Tingkatan Enam Belait",
+    "Pusat Tingkatan Enam Meragang",
+    "Pusat Tingkatan Enam Sengkurong",
+    "Pusat Tingkatan Enam Tutong",
+    "Sekolah Menengah Awang Semaun",
+    "Sekolah Menengah Berakas",
+    "Sekolah Menengah Katok",
+    "Sekolah Menengah Lambak Kiri",
+    "Sekolah Menengah Masin",
+    "Sekolah Menengah Menglait",
+    "Sekolah Menengah Muda Hashim",
+    "Sekolah Menengah Pehin Datu Seri Maharaja",
+    "Sekolah Menengah Pengiran Isteri Hajah Mariam",
+    "Sekolah Menengah Perdana Wazir",
+    "Sekolah Menengah Pg Anak Puteri Hajah Masna",
+    "Sekolah Menengah Pg Anak Puteri Hajah Rashidah Sa'adatul Bolkiah",
+    "Sekolah Menengah Pg Jaya Negara Pg Haji Abu Bakar",
+    "Sekolah Menengah Raja Isteri Pg Anak Saleha",
+    "Sekolah Menengah Rimba",
+    "Sekolah Menengah Rimba II",
+    "Sekolah Menengah Sayyidina ‘Umar Al-Khattab",
+    "Sekolah Menengah Sayyidina Abu Bakar",
+    "Sekolah Menengah Sayyidina Ali",
+    "Sekolah Menengah Sayyidina Hasan",
+    "Sekolah Menengah Sayyidina Husain",
+    "Sekolah Menengah Sayyidina Othman Tutong",
+    "Sekolah Menengah Sufri Bolkiah",
+    "Sekolah Menengah Sultan Hassan Bangar",
+    "Sekolah Menengah Sultan Muhammad Jamalul Alam",
+    "Sekolah Menengah Sultan Sharif Ali",
+    "Sekolah Menengah Tanjong Maya",
+    "Sekolah Rendah Abdul Rashid Tanjong Maya",
+    "Sekolah Rendah Ahmad Tajuddin",
+    "Sekolah Rendah Amar Pahlawan",
+    "Sekolah Rendah Amo",
+    "Sekolah Rendah Anggerek Desa",
+    "Sekolah Rendah Awang Haji Mohd Yusof Katimahar",
+    "Sekolah Rendah Bakiau",
+    "Sekolah Rendah Batang Mitus",
+    "Sekolah Rendah Batu Marang",
+    "Sekolah Rendah Bebuloh",
+    "Sekolah Rendah Bendahara Lama",
+    "Sekolah Rendah Bendahara Sakam Bunut",
+    "Sekolah Rendah Bengkurong",
+    "Sekolah Rendah Benutan",
+    "Sekolah Rendah Berakas Garrison",
+    "Sekolah Rendah Beribi Telanai",
+    "Sekolah Rendah Binturan",
+    "Sekolah Rendah Birau",
+    "Sekolah Rendah Bukit Panggal",
+    "Sekolah Rendah Bukit Udal",
+    "Sekolah Rendah Danau",
+    "Sekolah Rendah Dato Basir",
+    "Sekolah Rendah Dato Maharaja Setia Dian Sukang",
+    "Sekolah Rendah Dato Marsal",
+    "Sekolah Rendah Dato Mohd Yassin",
+    "Sekolah Rendah Dato Othman",
+    "Sekolah Rendah Dato Pemanca Saging Ukong",
+    "Sekolah Rendah Datu Mahawangsa Lambak",
+    "Sekolah Rendah Datu Ratna Hj Muhd Jaafar Kiarong",
+    "Sekolah Rendah Delima Satu",
+    "Sekolah Rendah Haji Mohd Jaafar Maun Kiulap",
+    "Sekolah Rendah Haji Mohd Salleh Sungai Hanching",
+    "Sekolah Rendah Haji Tarif",
+    "Sekolah Rendah Jerudong",
+    "Sekolah Rendah Junjongan",
+    "Sekolah Rendah Kampong Bukit",
+    "Sekolah Rendah Kampong Mata-Mata",
+    "Sekolah Rendah Kampong Menengah",
+    "Sekolah Rendah Kapok, Muara",
+    "Sekolah Rendah Kasat",
+    "Sekolah Rendah Katok A",
+    "Sekolah Rendah Katok B",
+    "Sekolah Rendah Keriam",
+    "Sekolah Rendah Kiudang",
+    "Sekolah Rendah Kuala Belait",
+    "Sekolah Rendah Labi",
+    "Sekolah Rendah Labu Estate",
+    "Sekolah Rendah Lambak Kanan Jalan 49",
+    "Sekolah Rendah Lamunin",
+    "Sekolah Rendah Lubok Pulau",
+    "Sekolah Rendah Lumapas",
+    "Sekolah Rendah Lumut",
+    "Sekolah Rendah Mabohai",
+    "Sekolah Rendah Masin",
+    "Sekolah Rendah Melilas",
+    "Sekolah Rendah Mentiri",
+    "Sekolah Rendah Merangking",
+    "Sekolah Rendah Muda Hashim",
+    "Sekolah Rendah Muhammad Alam",
+    "Sekolah Rendah Mulaut",
+    "Sekolah Rendah Nakhoda Abdul Rashid Menunggol",
+    "Sekolah Rendah Negalang",
+    "Sekolah Rendah Orang Kaya Ali Wanika Setia Diraja, Kupang",
+    "Sekolah Rendah Orang Kaya Besar Imas Subok",
+    "Sekolah Rendah Orang Kaya Panglima Barandai Bukit Sawat",
+    "Sekolah Rendah Orang Kaya Setia Bakti Kilanas",
+    "Sekolah Rendah Paduka Seri Begawan Sultan Omar Ali Saifuddien",
+    "Sekolah Rendah Panaga",
+    "Sekolah Rendah Panchong",
+    "Sekolah Rendah Panchor Murai",
+    "Sekolah Rendah Panglima Barudin Limau Manis",
+    "Sekolah Rendah Pantai Berakas",
+    "Sekolah Rendah Pehin Dato Jamil",
+    "Sekolah Rendah Penanjong",
+    "Sekolah Rendah Penapar",
+    "Sekolah Rendah Pengiran Anak Puteri Besar Sungai Kebun",
+    "Sekolah Rendah Pengiran Dipa Negara Pengiran Jaya, Sengkarai",
+    "Sekolah Rendah Pengiran Kesuma Negara Bukit Beruang",
+    "Sekolah Rendah Pengiran Muda Mahkota",
+    "Sekolah Rendah Pengiran Pekerma Setia Diraja Sahibul Bandar",
+    "Sekolah Rendah Pengiran Setia Jaya Pengiran Abdul Momin, Kg Pandan",
+    "Sekolah Rendah Pengiran Setia Negara Pengiran Mohd Yusof",
+    "Sekolah Rendah Pengkalan Batu",
+    "Sekolah Rendah Perpindahan Kampong Bukit Beruang II",
+    "Sekolah Rendah Perpindahan Kg Lambak Kanan Jalan 10",
+    "Sekolah Rendah Pintu Malim",
+    "Sekolah Rendah Pulaie",
+    "Sekolah Rendah Puni",
+    "Sekolah Rendah Pusar Ulak",
+    "Sekolah Rendah Putat",
+    "Sekolah Rendah Raja Isteri Fatimah",
+    "Sekolah Rendah Rambai",
+    "Sekolah Rendah Rataie",
+    "Sekolah Rendah Rimba I",
+    "Sekolah Rendah Rimba II",
+    "Sekolah Rendah Rimba III",
+    "Sekolah Rendah Saba Darat",
+    "Sekolah Rendah Selangan",
+    "Sekolah Rendah Selapon",
+    "Sekolah Rendah Semabat",
+    "Sekolah Rendah Sengkurong",
+    "Sekolah Rendah Serasa",
+    "Sekolah Rendah Sinaut",
+    "Sekolah Rendah Sultan Abdul Bubin Sungai Besar",
+    "Sekolah Rendah Sultan Hashim Batu Apoi",
+    "Sekolah Rendah Sultan Hassan Bangar",
+    "Sekolah Rendah Sultan Umar Ali Saifuddien Muara",
+    "Sekolah Rendah Sungai Liang",
+    "Sekolah Rendah Sungai Siamas",
+    "Sekolah Rendah Sungai Tali Lumut II, Belait",
+    "Sekolah Rendah Sungai Teraban",
+    "Sekolah Rendah Tanah Jambu",
+    "Sekolah Rendah Tanjong Kindana",
+    "Sekolah Rendah Tentera Laut Diraja Brunei",
+    "Sekolah Rendah Tumpuan Telisai",
+    "Sekolah Rendah Tungku",
+    "Sekolah Rendah Tutong Kem",
+    "Sekolah Sukan",
+    "Sekolah Tinggi Perempuan Raja isteri",
+  ];
 
-function populateLevelDropdown() {
-  Array.from(levelSel.querySelectorAll("option:not([disabled])")).forEach(o => o.remove());
-  Object.keys(LEVEL_SUBJECTS)
-    .slice()
-    .sort((a,b)=>a.localeCompare(b,"ms"))
-    .forEach(level => {
-      const opt = document.createElement("option");
-      opt.value = level; opt.textContent = level; levelSel.appendChild(opt);
-    });
-}
-function populateSubjectDropdown(level) {
-  subjectSel.innerHTML = '<option value="" disabled selected>Pilih subjek…</option>';
-  const list = LEVEL_SUBJECTS[level] || [];
-  list.slice().sort((a,b)=>a.localeCompare(b,"ms")).forEach(name => {
-    const opt = document.createElement("option");
-    opt.value = name; opt.textContent = name; subjectSel.appendChild(opt);
-  });
-  subjectSel.disabled = list.length === 0;
-}
-document.addEventListener("DOMContentLoaded", () => {
-  populateLevelDropdown();
-  populateSubjectDropdown("");
-});
-levelSel.addEventListener("change", () => {
-  populateSubjectDropdown(levelSel.value);
-  subjectSel.value = "";
-  document.dispatchEvent(new CustomEvent("meta-level-changed", { detail:{ level: levelSel.value } }));
-});
-subjectSel.addEventListener("change", () => {
-  document.dispatchEvent(new CustomEvent("meta-subject-changed", { detail:{ level: levelSel.value, subject: subjectSel.value } }));
-});
+  const CLASS_YEARS = [
+    "Pra",
+    "Y1",
+    "Y2",
+    "Y3",
+    "Y4",
+    "Y5",
+    "Y6",
+    "Y7",
+    "Y8",
+    "Y9",
+    "Y10",
+    "Y11",
+    "PU1",
+    "PU2",
+    "Multiple Level",
+  ];
 
-// -------------------- SECTIONS --------------------
-const SECTIONS = [
-  { id: "A", title: "Bahagian A: Pencapaian Pelajar", note: "Umur, peringkat dan kebolehan pelajar adalah diambil kira.", items: [
-    { code: "A1", label: "Pengetahuan Mata Pelajaran / Subject Knowledge", allowNA: true },
-    { code: "A2", label: "Kefahaman Mata Pelajaran", allowNA: true },
-    { code: "A3", label: "Pengaplikasian Mata Pelajaran", allowNA: true },
-    { code: "A4", label: "Analisis dan Penilaian" },
-    { code: "A5", label: "Kreativiti dalam Pembelajaran" },
-  ]},
-{ id: "B", title: "Bahagian B: Pembelajaran Pelajar", note: "Umur, peringkat dan kebolehan pelajar adalah diambil kira.", items: [
-    { code: "B1", label: "Komunikasi", allowNA: true },
-    { code: "B2", label: "Persediaan", allowNA: true },
-    { code: "B3", label: "Penglibatan", allowNA: true },
-    { code: "B4", label: "Pengaplikasian Kemahiran Mata Pelajaran", allowNA: true },
-    { code: "B5", label: "Sikap Mandiri / Inisiatif", allowNA: true },
-    { code: "B6", label: "Kemahiran ICT", allowNA: true },
-    { code: "B7", label: "Kolaborasi", allowNA: true },
-    { code: "B8", label: "Penggunaan Sumber", allowNA: true },
-    { code: "B9", label: "Kebolehan dalam Menyelesaikan Tugasan", allowNA: true },
-  ]},
-  { id: "C", title: "Bahagian C: Pengajaran Guru", note: "6 Standard, 17 Kompetensi Teras.", items: [
-    { code: "C1.1", label: "Menentukan Keupayaan Pelajar" },
-    { code: "C1.2", label: "Menetapkan Jangkaan yang Tinggi" },
-    { code: "C1.3a", label: "Amalan Bertanya — Cara Menyoal" },
-    { code: "C1.3b", label: "Amalan Bertanya — Jenis Soalan" },
-    { code: "C1.3c", label: "Amalan Bertanya — Respons Jawapan Pelajar" },
-    { code: "C1.3d", label: "Amalan Bertanya — Penglibatan Menyeluruh" },
-    { code: "C2.1", label: "Pengetahuan Mata Pelajaran Guru" },
-    { code: "C2.2", label: "Rancangan Pengajaran" },
-    { code: "C2.3a", label: "Pengurusan Tingkah Laku" },
-    { code: "C2.3b", label: "Pengurusan Masa/Struktur" },
-    { code: "C2.3c", label: "Pengaturan Kumpulan" },
-    { code: "C2.4", label: "Sumber-sumber Pembelajaran" },
-    { code: "C3.1", label: "Mencabar Pelajar mengikut Keperluan Individu" },
-    { code: "C3.2", label: "Memperkembangkan Kefahaman & Kemahiran" },
-    { code: "C4.1a", label: "Objektif Pembelajaran Dikongsi/Jelas" },
-    { code: "C4.1b", label: "Pelarasan Berdasarkan Penilaian & Maklum Balas" },
-    { code: "C4.2", label: "Merancang Penilaian" },
-    { code: "C4.3", label: "Menggunakan Penilaian untuk Mendorong Pembelajaran" },
-    { code: "C5.1", label: "Mempertingkat Amalan Profesional" },
-    { code: "C5.2", label: "Mengamalkan Amalan Profesional" },
-    { code: "C6.1", label: "Etika & Moral Tinggi" },
-    { code: "C6.2", label: "Kehadiran & Ketepatan Masa" },
-    { code: "C6.3", label: "Maklum Polisi/Peraturan Rasmi" },
-  ]}
-];
+  const CLUSTERS = ["C_1", "C_2", "C_3", "C_4", "C_5", "C_6"];
 
-// -------------------- RUBRICS (teks tepat) --------------------
+  const METHODS_OF_LEARNING = [
+    "Pembelajaran di Sekolah / Study at School (S@S)",
+    "S@S (Dengan penjarakan sosial / Social Distancing)",
+    "Pembelajaran dan Pengajaran dalam Talian / Online Lessons",
+    "Home Learning Packs (HLP)",
+  ];
+
+  const LEVEL_SUBJECTS = {
+    "Pra-Sekolah": [
+      "PRA - LITERACY (ENGLISH)",
+      "PRA - LITERASI (BAHASA MELAYU)",
+      "PRA - NUMERACY / MATHS",
+      "PRA - AWAL SAINS",
+      "PRA - SENI / KREATIF",
+      "PRA - ASUHAN BUDI",
+      "PRA - UGAMA",
+      "PRA - ICT",
+    ],
+    "Sekolah Rendah (Primary)": [
+      "PRI - BAHASA MELAYU",
+      "PRI - ENGLISH LANGUAGE",
+      "PRI - MATHEMATICS",
+      "PRI - SCIENCE",
+      "PRI - PENGETAHUAN UGAMA ISLAM",
+      "PRI - SOCIAL STUDIES",
+      "PRI - ART & CRAFT / DESIGN",
+      "PRI - PENDIDIKAN JASMANI",
+      "PRI - MIB",
+      "PRI - ICT",
+      "SENA - MATEMATIK",
+      "SENA - BAHASA MELAYU",
+      "SENA - LAIN-LAIN/ OTHERS",
+    ],
+    "Integrated Curriculum (Primary Extension)": [
+      "INTEGRATED CURRICULUM - ASAS PENGETAHUAN UGAMA ISLAM",
+      "INTEGRATED CURRICULUM - LITERASI BAHASA MELAYU (MIB)",
+      "INTEGRATED CURRICULUM - LITERASI BAHASA MELAYU (LRB)",
+      "INTEGRATED CURRICULUM - ENGLISH LITERACY (SCIENCE)",
+      "INTEGRATED CURRICULUM - ENGLISH LITERACY (ICT)",
+      "INTEGRATED CURRICULUM - NUMERACY",
+      "INTEGRATED CURRICULUM - PHYSICAL EDUCATION",
+    ],
+    "Menengah Bawah (Lower Secondary)": [
+      "LSEC - BAHASA MELAYU",
+      "LSEC - ENGLISH LANGUAGE",
+      "LSEC - MATHEMATICS",
+      "LSEC - SCIENCE",
+      "LSEC - PENGETAHUAN UGAMA ISLAM",
+      "LSEC - MIB",
+      "LSEC - PENDIDIKAN JASMANI",
+      "LSEC - BAT",
+      "LSEC - SOCIAL STUDIES",
+      "LSEC - MARINE SCIENCE",
+      "LSEC - ARABIC (OPTION)",
+      "LSEC - DRAMA (OPTION)",
+      "LSEC - COMPUTER (OPTION)",
+      "LSEC - JAPANESE (OPTION)",
+      "LSEC - FRENCH (OPTION)",
+      "LSEC - LAIN-LAIN/ OTHERS",
+    ],
+    "Menengah Atas (Upper Secondary)": [
+      "USEC - ENGLISH LANGUAGE",
+      "USEC - BAHASA MELAYU",
+      "USEC - LITERATURE IN ENGLISH",
+      "USEC - MALAY LITERATURE",
+      "USEC - ISLAMIC RELIGIOUS KNOWLEDGE",
+      "USEC - ULUM AL-QURAN",
+      "USEC - HAFAZ AL-QURAN",
+      "USEC - TAFSIR AL-QURAN",
+      "USEC - HISTORY (MODERN WORLD AFFAIRS)",
+      "USEC - HISTORY",
+      "USEC - COMPUTER SCIENCE",
+      "USEC - GEOGRAPHY",
+      "USEC - SOCIOLOGY",
+      "USEC - ECONOMICS",
+      "USEC - ARABIC",
+      "USEC - MATHEMATICS SYLLABUS D",
+      "USEC - ADDITIONAL MATHEMATICS",
+      "USEC - STATISTICS",
+      "USEC - AGRICULTURE",
+      "USEC - PHYSICS",
+      "USEC - CHEMISTRY",
+      "USEC - BIOLOGY",
+      "USEC - COMBINED SCIENCE",
+      "USEC - DESIGN AND TECHNOLOGY",
+      "USEC - FOOD AND NUTRITION",
+      "USEC - ART & DESIGN",
+      "USEC - TRAVEL AND TOURISM",
+      "USEC - COMMERCE",
+      "USEC - COMMERCIAL STUDIES",
+      "USEC - MARINE SCIENCE",
+      "USEC - JAPANESE",
+      "USEC - ACCOUNTING",
+      "USEC - BUSINESS STUDIES",
+      "USEC - PRAVOCATIONAL SUBJECTS",
+      "USEC - BTEC SUBJECTS",
+      "USEC - TARBIYAH ISLAM",
+      "USEC - MIB",
+      "USEC - OTHERS",
+    ],
+    "IGCSE Level": [
+      "IGCSE PHYSICAL EDUCATION",
+      "IGCSE ICT",
+      "IGCSE DESIGN AND TECHNOLOGY",
+      "IGCSE BUSINESS STUDIES",
+      "IGCSE ACCOUNTING",
+      "IGCSE TRAVEL AND TOURISM",
+      "IGCSE ENGLISH AS A SECOND LANGUAGE (CORE)",
+      "IGCSE ENGLISH AS A SECOND LANGUAGE (EXTENDED)",
+      "IGCSE MARINE SCIENCE",
+      "IGCSE JAPANESE",
+      "IGCSE FRENCH",
+      "IGCSE MATHEMATICS (CORE)",
+      "IGCSE MATHEMATICS (EXTENDED)",
+    ],
+    "Pra-U / Sixth Form": [
+      "SF - GENERAL PAPER",
+      "SF - LANGUAGE AND LITERATURE IN ENGLISH",
+      "SF - HAFAZ AL-QURAN",
+      "SF - SYARIAH",
+      "SF - USULUDDIN",
+      "SF - LAW",
+      "SF - ENGLISH LANGUAGE",
+      "SF - BAHASA MELAYU",
+      "SF - FURTHER MATHEMATICS",
+      "SF - FOOD STUDIES",
+      "SF - HISTORY",
+      "SF - TRAVEL AND TOURISM",
+      "SF - PHYSICAL EDUCATION",
+      "SF - COMPUTER SCIENCE",
+      "SF - BUSINESS",
+      "SF - THINKING SKILLS",
+      "SF - LITERATURE IN ENGLISH",
+      "SF - GEOGRAPHY",
+      "SF - PSYCHOLOGY",
+      "SF - SOCIOLOGY",
+      "SF - BIOLOGY",
+      "SF - CHEMISTRY",
+      "SF - PHYSICS",
+      "SF - ART AND DESIGN",
+      "SF - DESIGN AND TECHNOLOGY",
+      "SF - ACCOUNTING",
+      "SF - ECONOMICS",
+      "SF - MATHEMATICS",
+      "SF - APPLIED ICT",
+      "SF - OTHERS",
+    ],
+  };
+
+  const SECTIONS = [
+    {
+      id: "A",
+      title: "Bahagian A: Pencapaian Pelajar",
+      note: "Umur, peringkat dan kebolehan pelajar adalah diambil kira.",
+      items: [
+        { code: "A1", label: "Pengetahuan Mata Pelajaran / Subject Knowledge"},
+        { code: "A2", label: "Kefahaman Mata Pelajaran"},
+        { code: "A3", label: "Pengaplikasian Mata Pelajaran"},
+        { code: "A4", label: "Analisis dan Penilaian" , allowNA: true },
+        { code: "A5", label: "Kreativiti dalam Pembelajaran" , allowNA: true },
+      ],
+    },
+    {
+      id: "B",
+      title: "Bahagian B: Pembelajaran Pelajar",
+      note: "Umur, peringkat dan kebolehan pelajar adalah diambil kira.",
+      items: [
+        { code: "B1", label: "Komunikasi", allowNA: true },
+        { code: "B2", label: "Persediaan", allowNA: true },
+        { code: "B3", label: "Penglibatan", allowNA: true },
+        { code: "B4", label: "Pengaplikasian Kemahiran Mata Pelajaran", allowNA: true },
+        { code: "B5", label: "Sikap Mandiri / Inisiatif", allowNA: true },
+        { code: "B6", label: "Kemahiran ICT", allowNA: true },
+        { code: "B7", label: "Kolaborasi", allowNA: true },
+        { code: "B8", label: "Penggunaan Sumber", allowNA: true },
+        { code: "B9", label: "Kebolehan dalam Menyelesaikan Tugasan", allowNA: true },
+      ],
+    },
+    {
+      id: "C",
+      title: "Bahagian C: Pengajaran Guru",
+      note: "6 Standard, 17 Kompetensi Teras.",
+      items: [
+        { code: "C1.1", label: "Menentukan Keupayaan Pelajar" },
+        { code: "C1.2", label: "Menetapkan Jangkaan yang Tinggi" },
+        { code: "C1.3a", label: "Amalan Bertanya — Cara Menyoal" },
+        { code: "C1.3b", label: "Amalan Bertanya — Jenis Soalan" },
+        { code: "C1.3c", label: "Amalan Bertanya — Respons Jawapan Pelajar" },
+        { code: "C1.3d", label: "Amalan Bertanya — Penglibatan Menyeluruh" },
+        { code: "C2.1", label: "Pengetahuan Mata Pelajaran Guru" },
+        { code: "C2.2", label: "Rancangan Pengajaran" },
+        { code: "C2.3a", label: "Pengurusan Tingkah Laku" },
+        { code: "C2.3b", label: "Pengurusan Masa/Struktur" },
+        { code: "C2.3c", label: "Pengaturan Kumpulan" },
+        { code: "C2.4", label: "Sumber-sumber Pembelajaran" },
+        { code: "C3.1", label: "Mencabar Pelajar mengikut Keperluan Individu" },
+        { code: "C3.2", label: "Memperkembangkan Kefahaman & Kemahiran" },
+        { code: "C4.1a", label: "Objektif Pembelajaran Dikongsi/Jelas" },
+        { code: "C4.1b", label: "Pelarasan Berdasarkan Penilaian & Maklum Balas" },
+        { code: "C4.2", label: "Merancang Penilaian" },
+        { code: "C4.3", label: "Menggunakan Penilaian untuk Mendorong Pembelajaran" },
+        { code: "C5.1", label: "Mempertingkat Amalan Profesional" },
+        { code: "C5.2", label: "Mengamalkan Amalan Profesional" },
+        { code: "C6.1", label: "Etika & Moral Tinggi" },
+        { code: "C6.2", label: "Kehadiran & Ketepatan Masa" },
+        { code: "C6.3", label: "Maklum Polisi/Peraturan Rasmi" },
+      ],
+    },
+  ];
 const RUBRICS = { 
  
  /* ===== A1–A5 ===== */
@@ -455,299 +650,515 @@ const RUBRICS = {
         5:"Guru mematuhi dan sentiasa mengemaskini pengetahuan dasar pendidikan semasa, peraturan dan keperluan lain."}}
     };
 
-// -------------------- RENDER --------------------
-const container = document.getElementById("formContainer");
-function infoButton(code){
-  return `<button type="button" data-rubric="${code}" class="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-700 border hover:bg-slate-200" title="Lihat rubrik ${code}">i</button>`;
-}
-function getDescriptorSnippet(code, level){
-  const t = RUBRICS[code]?.levels?.[level];
-  if(!t) return "";
-  return t.length > 160 ? t.slice(0,157)+"…" : t;
-}
-function renderSection(sec){
-  const showNA = sec.items.some(it => it.allowNA);
-  const card = document.createElement("section");
-  card.className = "bg-white rounded-2xl shadow p-4";
-  card.innerHTML = `
-    <div class="flex items-center justify-between gap-3">
-      <div>
-        <h2 class="text-lg font-semibold">${sec.title}</h2>
-        <p class="text-sm text-slate-500">${sec.note || ""}</p>
-      </div>
-      <div class="text-sm">
-        <span class="inline-block px-2 py-1 rounded-lg bg-slate-100">Item: ${sec.items.length}</span>
-      </div>
-    </div>
-    <div class="overflow-x-auto mt-4">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-left text-slate-600 border-b">
-            <th class="py-2 pr-2">Kod</th>
-            <th class="py-2 pr-2">Bidang Fokus</th>
-            <th class="py-2 pr-2 text-center">1</th>
-            <th class="py-2 pr-2 text-center">2</th>
-            <th class="py-2 pr-2 text-center">3</th>
-            <th class="py-2 pr-2 text-center">4</th>
-            <th class="py-2 pr-2 text-center">5</th>
-            ${showNA ? '<th class="py-2 pr-2 text-center">N/A</th>' : ''}
-            <th class="py-2 pr-2">Ulasan (Optional)</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-${sec.id}"></tbody>
-      </table>
-    </div>
-    <div class="mt-3 text-sm">
-      <span class="text-slate-500">Purata ${sec.id}:</span>
-      <span id="avg-${sec.id}" class="font-semibold">–</span>
-    </div>
-  `;
-  container.appendChild(card);
 
-  const tbody = card.querySelector(`#tbody-${sec.id}`);
-  sec.items.forEach((it) => {
-    const tr = document.createElement("tr");
-    tr.className = "border-b last:border-0 align-top";
-    const hasRubric = !!RUBRICS[it.code];
-    const ratingCells = [1, 2, 3, 4, 5]
-      .map(
-        (v) => `
-      <td class="py-2 pr-2 text-center rating-cell">
-        <input type="radio" name="${it.code}" value="${v}" aria-label="${it.code}=${v}" title="${getDescriptorSnippet(it.code, v)}" />
-      </td>`
-      )
-      .join("");
-    const naCell = showNA
-      ? `
-      <td class="py-2 pr-2 text-center rating-cell">
-        ${it.allowNA ? `<input type="radio" name="${it.code}" value="NA" aria-label="${it.code}=NA" title="Tidak berkenaan" />` : ""}
-      </td>
-    `
-      : "";
-    tr.innerHTML = `
-      <td class="py-2 pr-2 font-medium whitespace-nowrap">${it.code} ${hasRubric ? infoButton(it.code) : ""}</td>
-      <td class="py-2 pr-2">${it.label}</td>
-   ${ratingCells}
-      ${naCell}
- 
-      <td class="py-2 pr-2 min-w-[220px]">
-        <textarea name="${it.code}_comment" class="w-full rounded-lg border-slate-300" rows="1" placeholder="Catatan ringkas..."></textarea>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-SECTIONS.forEach(renderSection);
-
-// -------------------- CALCULATIONS --------------------
-const avgAEl = document.getElementById("avgA");
-const avgBEl = document.getElementById("avgB");
-const avgCEl = document.getElementById("avgC");
-const avgAllEl = document.getElementById("avgAll");
-const gradeAllEl = document.getElementById("gradeAll");
-
-function getValue(name){
-  const c = document.querySelector(`input[name="${name}"]:checked`);
-  if(!c) return null;
-  return c.value === "NA" ? "NA" : Number(c.value);
-}
-function getNumericValue(name){
-  const v = getValue(name);
-  return typeof v === "number" ? v : null;
-}
-function sectionAverage(sec){ const vals = sec.items.map(it => getNumericValue(it.code)).filter(v => v!==null); return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null; }
-function overallAverage(){ const codes = SECTIONS.flatMap(s=>s.items.map(it=>it.code)); const vals = codes.map(getNumericValue).filter(v=>v!==null); return vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null; }
-function mapGrade(avg){ if(avg===null) return {grade:"–",text:"Lengkapkan penilaian."}; const g = Math.max(1, Math.min(5, Math.round(avg))); const desc={1:"Tidak Memuaskan",2:"Memuaskan",3:"Baik",4:"Sangat Baik",5:"Cemerlang"}[g]; return {grade:g,text:desc}; }
-const fmt = n => n===null? "–" : (Math.round(n*100)/100).toFixed(2);
-function refresh(){
-  const a = sectionAverage(SECTIONS[0]);
-  const b = sectionAverage(SECTIONS[1]);
-  const c = sectionAverage(SECTIONS[2]);
-  avgAEl.textContent = fmt(a); avgBEl.textContent = fmt(b); avgCEl.textContent = fmt(c);
-  const all = overallAverage();
-  avgAllEl.textContent = fmt(all);
-  const {grade,text} = mapGrade(all);
-  gradeAllEl.textContent = grade==="–"? "" : `Gred Keseluruhan: ${grade} (${text})`;
-}
-document.body.addEventListener("change", e => { if(e.target.type === "radio" || e.target.tagName === "TEXTAREA") refresh(); });
-
-// -------------------- SAVE/LOAD/EXPORT --------------------
-const metaFields = [
-  "metaTeacher","metaLevel","metaSubject","metaEvaluator","metaDate","metaSchool",
-  "metaCluster","metaMethod","metaClassYear","metaClassName","metaStudentCount"
-];
-
-function collectData(){
-  const data = { meta:Object.fromEntries(metaFields.map(id=>[id, document.getElementById(id)?.value||""])), ratings:{}, comments:{}, averages:{} };
-  SECTIONS.forEach(sec=>sec.items.forEach(it=>{
-    data.ratings[it.code] = getValue(it.code);
-    const t = document.querySelector(`textarea[name="${it.code}_comment"]`);
-    data.comments[it.code] = t ? t.value : "";
-  }));
-  data.averages.A = sectionAverage(SECTIONS[0]);
-  data.averages.B = sectionAverage(SECTIONS[1]);
-  data.averages.C = sectionAverage(SECTIONS[2]);
-  data.averages.overall = overallAverage();
-  data.averages.mapped = mapGrade(data.averages.overall);
-  return data;
-}
-
-function fillData(data){
-  if(!data) return;
-  ["metaTeacher","metaEvaluator","metaDate","metaSchool","metaCluster","metaMethod","metaClassYear","metaClassName","metaStudentCount"].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value=data.meta?.[id]||"";
-  });
-  const savedLevel = data.meta?.metaLevel || "";
-  const savedSubject = data.meta?.metaSubject || "";
-  if (savedLevel) {
-    if (!LEVEL_SUBJECTS[savedLevel]) {
-      LEVEL_SUBJECTS[savedLevel] = [];
-      const opt=document.createElement("option"); opt.value=savedLevel; opt.textContent=savedLevel; levelSel.appendChild(opt);
-    }
-    levelSel.value = savedLevel;
-    populateSubjectDropdown(savedLevel);
-    subjectSel.disabled = false;
-  }
-  if (savedSubject) {
-    if (![...subjectSel.options].some(o=>o.value===savedSubject)) {
-      const opt=document.createElement("option"); opt.value=savedSubject; opt.textContent=savedSubject; subjectSel.appendChild(opt);
-    }
-    subjectSel.value = savedSubject;
-  }
-  SECTIONS.forEach(sec=>sec.items.forEach(it=>{
-    const v = data.ratings?.[it.code];
-    if(v!=null){
-      const radio=document.querySelector(`input[name="${it.code}"][value="${v}"]`);
-      if(radio) radio.checked = true;
-    }
-    const t=document.querySelector(`textarea[name="${it.code}_comment"]`);
-    if(t) t.value = data.comments?.[it.code]||"";
-  }));
-  refresh();
-}
-document.getElementById("btnSave").addEventListener("click", ()=>{ localStorage.setItem("btstpa_form", JSON.stringify(collectData())); alert("Draf disimpan pada pelayar (localStorage)."); });
-document.getElementById("btnLoad").addEventListener("click", ()=>{ const raw=localStorage.getItem("btstpa_form"); if(!raw){ alert("Tiada draf ditemui."); return; } fillData(JSON.parse(raw)); alert("Draf dimuat."); });
-
-function downloadBlob(contents, fileName, mimeType){
-  const blob = new Blob([contents], { type: mimeType });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  URL.revokeObjectURL(link.href);
-  document.body.removeChild(link);
-}
-
-const btnJSON = document.getElementById("btnJSON");
-if(btnJSON){
-  btnJSON.addEventListener("click", () => {
-    const data = collectData();
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const jsonString = JSON.stringify(data, null, 2);
-    downloadBlob(jsonString, `btstpa-${timestamp}.json`, "application/json");
-  });
-}
-
-function toCsvValue(value){
-  const str = value == null ? "" : String(value);
-  if(/[",\n]/.test(str)){
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
-function buildCsv(data){
-  const rows = [];
-  rows.push(["Field","Value"]);
-  metaFields.forEach(id => {
-    rows.push([id, data.meta?.[id] ?? ""]);
-  });
-  rows.push([]);
-  rows.push(["Section","Code","Label","Rating","Comment"]);
-  SECTIONS.forEach(section => {
-    section.items.forEach(item => {
-      const rating = data.ratings?.[item.code];
-      rows.push([
-        section.id,
-        item.code,
-        item.label,
-        rating == null ? "" : rating,
-        data.comments?.[item.code] ?? "",
-      ]);
-    });
-  });
-  rows.push([]);
-  rows.push(["Average A", data.averages?.A ?? ""]);
-  rows.push(["Average B", data.averages?.B ?? ""]);
-  rows.push(["Average C", data.averages?.C ?? ""]);
-  rows.push(["Average Overall", data.averages?.overall ?? ""]);
-  const mapped = data.averages?.mapped || {};
-  rows.push(["Mapped Grade", mapped.grade ?? ""]);
-  rows.push(["Mapped Grade Description", mapped.text ?? ""]);
-  return rows
-    .map(row => row.map(toCsvValue).join(","))
-    .join("\r\n");
-}
-
-const btnCSV = document.getElementById("btnCSV");
-if(btnCSV){
-  btnCSV.addEventListener("click", () => {
-    const data = collectData();
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const csvString = buildCsv(data);
-    downloadBlob(csvString, `btstpa-${timestamp}.csv`, "text/csv;charset=utf-8");
-  });
-}
-
-document.getElementById("btnSubmit")
-  .addEventListener("click", submitToSheets);
-
-async function submitForm() {
-  const payload = {
-    metaTeacher: "Cg Azim",
-    metaSchool: "SM Rimba II",
-    ratings: { "TPA1.1": 4, "TPA1.2": 5 },
+  // ------------------------------------------------------------
+  // DOM helpers
+  // ------------------------------------------------------------
+  const elements = {
+    formContainer: document.getElementById("formContainer"),
+    metaLevel: document.getElementById("metaLevel"),
+    metaSubject: document.getElementById("metaSubject"),
+    btnSave: document.getElementById("btnSave"),
+    btnLoad: document.getElementById("btnLoad"),
+    btnJSON: document.getElementById("btnJSON"),
+    btnCSV: document.getElementById("btnCSV"),
+    btnSubmit: document.getElementById("btnSubmit"),
+    avgA: document.getElementById("avgA"),
+    avgB: document.getElementById("avgB"),
+    avgC: document.getElementById("avgC"),
+    avgAll: document.getElementById("avgAll"),
+    gradeAll: document.getElementById("gradeAll"),
+    rubricModal: document.getElementById("rubricModal"),
+    rubricBody: document.getElementById("rubricBody"),
+    rubricTitle: document.getElementById("rubricTitle"),
+    rubricSubtitle: document.getElementById("rubricSubtitle"),
   };
 
-  try {
-    const response = await fetch(window.SHEETS_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
+  const uniqueSorted = (list) => Array.from(new Set(list.map((v) => v.trim()))).sort((a, b) => a.localeCompare(b, "ms"));
+
+  function populateSelect(element, values, placeholder) {
+    if (!element) return;
+    const current = element.value;
+    element.innerHTML = "";
+    if (placeholder) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = placeholder;
+      opt.disabled = true;
+      opt.selected = true;
+      element.appendChild(opt);
+    }
+    values.forEach((value) => {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = value;
+      element.appendChild(opt);
     });
-
-    const text = await response.text();
-    console.log("Response from server:", text);
-    alert("✅ Borang berjaya dihantar!");
-  } catch (error) {
-    console.error("Error:", error);
-    alert("❌ Gagal menghantar borang: " + error.message);
+    if (values.includes(current)) {
+      element.value = current;
+    }
   }
-}
 
-// -------------------- MODALS: Rubric --------------------
-const rubricModal = document.getElementById("rubricModal"); 
-const rubricBody = document.getElementById("rubricBody");
-const rubricTitle = document.getElementById("rubricTitle");
-const rubricSubtitle = document.getElementById("rubricSubtitle");
-document.body.addEventListener("click", (e)=>{
-  const btn = e.target.closest("[data-rubric]");
-  if(!btn) return;
-  const code = btn.getAttribute("data-rubric");
-  const r = RUBRICS[code];
-  rubricTitle.textContent = `${code} — ${r?.title || "Rubrik Item"}`;
-  rubricSubtitle.textContent = r?.prompt || "Deskriptor 1–5";
-  rubricBody.innerHTML = "";
-  if(!r){
-    rubricBody.innerHTML = `<tr><td class="py-3 pr-2 align-top font-medium">—</td><td class="py-3 pr-2">Rubrik belum ditambah untuk item ini.</td></tr>`;
-  }else{
-    [1,2,3,4,5].forEach(g=>{
+  function populateSchools() {
+    const sorted = uniqueSorted(SCHOOLS);
+    populateSelect(document.getElementById("metaSchool"), sorted, "Pilih sekolah…");
+  }
+
+  function populateSimpleSelect(id, list, placeholder) {
+    populateSelect(document.getElementById(id), list, placeholder);
+  }
+
+  function populateLevels() {
+    const levels = Object.keys(LEVEL_SUBJECTS).sort((a, b) => a.localeCompare(b, "ms"));
+    populateSelect(elements.metaLevel, levels, "Pilih tahap…");
+  }
+
+  function populateSubjects(level) {
+    const subjects = (LEVEL_SUBJECTS[level] || []).slice().sort((a, b) => a.localeCompare(b, "ms"));
+    populateSelect(elements.metaSubject, subjects, "Pilih subjek…");
+    elements.metaSubject.disabled = subjects.length === 0;
+  }
+
+  function escapeAttr(value) {
+    return value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function infoButton(code) {
+    return `<button type="button" data-rubric="${code}" class="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-slate-100 text-slate-700 hover:bg-slate-200" title="Lihat rubrik ${code}">i</button>`;
+  }
+
+  function getDescriptorSnippet(code, level) {
+    const text = RUBRICS[code]?.levels?.[level];
+    if (!text) return "";
+    const snippet = text.length > 160 ? `${text.slice(0, 157)}…` : text;
+    return escapeAttr(snippet);
+  }
+
+  function renderSection(section) {
+    const showNA = section.items.some((item) => item.allowNA);
+    const card = document.createElement("section");
+    card.className = "rounded-2xl bg-white p-6 shadow";
+    card.innerHTML = `
+      <header class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-lg font-semibold">${section.title}</h2>
+          <p class="text-sm text-slate-500">${section.note}</p>
+        </div>
+        <div class="rounded-lg bg-slate-100 px-3 py-1 text-sm">
+          <span class="text-slate-500">Purata ${section.id}:</span>
+          <span id="avg-${section.id}" class="font-semibold">–</span>
+        </div>
+      </header>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b text-left text-slate-600">
+              <th class="w-44 py-2 pr-2">Kod</th>
+              <th class="py-2 pr-2">Pernyataan</th>
+              ${RATING_SCALE.map((v) => `<th class="w-16 py-2 text-center">${v}</th>`).join("")}
+              ${showNA ? '<th class="w-16 py-2 text-center">NA</th>' : ""}
+              <th class="w-60 py-2 pr-2">Catatan</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-${section.id}"></tbody>
+        </table>
+      </div>
+    `;
+    elements.formContainer.appendChild(card);
+
+    const tbody = card.querySelector(`#tbody-${section.id}`);
+    section.items.forEach((item) => {
       const tr = document.createElement("tr");
-      tr.className = "border-b last:border-0";
-      tr.innerHTML = `<td class="py-3 pr-2 align-top font-medium w-28">${g}</td><td class="py-3 pr-2">${r.levels[g] || "-"}</td>`;
-      rubricBody.appendChild(tr);
+      tr.className = "border-b align-top last:border-0";
+      const hasRubric = Boolean(RUBRICS[item.code]);
+      const ratingCells = RATING_SCALE.map(
+        (value) => `
+          <td class="rating-cell py-2 pr-2 text-center">
+            <input type="radio" name="${item.code}" value="${value}" aria-label="${item.code}=${value}" title="${getDescriptorSnippet(item.code, value)}" />
+          </td>
+        `
+      ).join("");
+      const naCell = showNA
+        ? `
+          <td class="py-2 pr-2 text-center">
+            ${item.allowNA ? `<input type="radio" name="${item.code}" value="NA" aria-label="${item.code}=NA" title="Tidak berkenaan" />` : ""}
+          </td>
+        `
+        : "";
+      tr.innerHTML = `
+        <td class="whitespace-nowrap py-2 pr-2 font-medium">${item.code}${hasRubric ? infoButton(item.code) : ""}</td>
+        <td class="py-2 pr-2">${item.label}</td>
+        ${ratingCells}
+        ${naCell}
+        <td class="py-2 pr-2">
+          <textarea name="${item.code}_comment" class="w-full rounded-lg border-slate-300" rows="1" placeholder="Catatan ringkas..."></textarea>
+        </td>
+      `;
+      tbody.appendChild(tr);
     });
   }
-  rubricModal.showModal();
-});
+
+  function renderSections() {
+    if (!elements.formContainer) return;
+    elements.formContainer.innerHTML = "";
+    SECTIONS.forEach(renderSection);
+  }
+
+  // ------------------------------------------------------------
+  // Calculations & data helpers
+  // ------------------------------------------------------------
+  function getCheckedValue(name) {
+    const checked = document.querySelector(`input[name="${name}"]:checked`);
+    if (!checked) return null;
+    if (checked.value === "NA") return "NA";
+    return Number(checked.value);
+  }
+
+  function numericValue(name) {
+    const value = getCheckedValue(name);
+    return typeof value === "number" && Number.isFinite(value) ? value : null;
+  }
+
+  function sectionAverage(section) {
+    const values = section.items
+      .map((item) => numericValue(item.code))
+      .filter((value) => value !== null);
+    if (!values.length) return null;
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return total / values.length;
+  }
+
+  function overallAverage() {
+    const allCodes = SECTIONS.flatMap((section) => section.items.map((item) => item.code));
+    const values = allCodes.map(numericValue).filter((value) => value !== null);
+    if (!values.length) return null;
+    const total = values.reduce((sum, value) => sum + value, 0);
+    return total / values.length;
+  }
+
+  function mapGrade(avg) {
+    if (avg === null) return { grade: "–", text: "Lengkapkan penilaian." };
+    const rounded = Math.max(1, Math.min(5, Math.round(avg)));
+    return { grade: rounded, text: GRADE_LABELS[rounded] };
+  }
+
+  function formatAverage(value) {
+    return value === null ? "–" : (Math.round(value * 100) / 100).toFixed(2);
+  }
+
+  function refreshSummaries() {
+    const averages = {
+      A: sectionAverage(SECTIONS[0]),
+      B: sectionAverage(SECTIONS[1]),
+      C: sectionAverage(SECTIONS[2]),
+      overall: overallAverage(),
+    };
+    elements.avgA.textContent = formatAverage(averages.A);
+    const cardA = document.getElementById("avg-A");
+    if (cardA) cardA.textContent = formatAverage(averages.A);
+    elements.avgB.textContent = formatAverage(averages.B);
+    const cardB = document.getElementById("avg-B");
+    if (cardB) cardB.textContent = formatAverage(averages.B);
+    elements.avgC.textContent = formatAverage(averages.C);
+    const cardC = document.getElementById("avg-C");
+    if (cardC) cardC.textContent = formatAverage(averages.C);
+    elements.avgAll.textContent = formatAverage(averages.overall);
+    const mapped = mapGrade(averages.overall);
+    elements.gradeAll.textContent = mapped.grade === "–" ? "" : `Gred Keseluruhan: ${mapped.grade} (${mapped.text})`;
+    return { averages, mapped };
+  }
+
+  function collectData() {
+    const meta = Object.fromEntries(
+      metaFieldIds.map((id) => {
+        const el = document.getElementById(id);
+        return [id, el ? el.value : ""];
+      })
+    );
+
+    const ratings = {};
+    const comments = {};
+    SECTIONS.forEach((section) => {
+      section.items.forEach((item) => {
+        ratings[item.code] = getCheckedValue(item.code);
+        const textarea = document.querySelector(`textarea[name="${item.code}_comment"]`);
+        comments[item.code] = textarea ? textarea.value : "";
+      });
+    });
+
+    const summary = refreshSummaries();
+
+    return {
+      meta,
+      ratings,
+      comments,
+      averages: {
+        A: summary.averages.A,
+        B: summary.averages.B,
+        C: summary.averages.C,
+        overall: summary.averages.overall,
+        mapped: summary.mapped,
+      },
+    };
+  }
+
+  function fillData(data) {
+    if (!data) return;
+    metaFieldIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = data.meta?.[id] ?? "";
+    });
+
+    const savedLevel = data.meta?.metaLevel || "";
+    if (savedLevel) {
+      if (!LEVEL_SUBJECTS[savedLevel]) {
+        LEVEL_SUBJECTS[savedLevel] = [];
+      }
+      populateLevels();
+      elements.metaLevel.value = savedLevel;
+      populateSubjects(savedLevel);
+      elements.metaSubject.disabled = false;
+    }
+
+    const savedSubject = data.meta?.metaSubject || "";
+    if (savedSubject) {
+      if (!Array.from(elements.metaSubject.options).some((opt) => opt.value === savedSubject)) {
+        const opt = document.createElement("option");
+        opt.value = savedSubject;
+        opt.textContent = savedSubject;
+        elements.metaSubject.appendChild(opt);
+      }
+      elements.metaSubject.value = savedSubject;
+    }
+
+    SECTIONS.forEach((section) => {
+      section.items.forEach((item) => {
+        const value = data.ratings?.[item.code];
+        if (value !== undefined && value !== null) {
+          const selector = `input[name="${item.code}"][value="${value}"]`;
+          const radio = document.querySelector(selector);
+          if (radio) radio.checked = true;
+        }
+        const textarea = document.querySelector(`textarea[name="${item.code}_comment"]`);
+        if (textarea) textarea.value = data.comments?.[item.code] ?? "";
+      });
+    });
+
+    refreshSummaries();
+  }
+
+  function handleSaveDraft() {
+    const data = collectData();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    alert("Draf disimpan pada pelayar (localStorage).");
+  }
+
+  function handleLoadDraft() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      alert("Tiada draf ditemui.");
+      return;
+    }
+    try {
+      const data = JSON.parse(raw);
+      fillData(data);
+      alert("Draf dimuat.");
+    } catch (error) {
+      console.error("Gagal memuat draf", error);
+      alert("❌ Draf rosak atau tidak sah.");
+    }
+  }
+
+  function toCsvValue(value) {
+    const str = value == null ? "" : String(value);
+    if (/[",\n]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
+
+  function buildCsv(data) {
+    const rows = [];
+    rows.push(["Field", "Value"]);
+    metaFieldIds.forEach((id) => {
+      rows.push([id, data.meta?.[id] ?? ""]);
+    });
+    rows.push([]);
+    rows.push(["Section", "Code", "Label", "Rating", "Comment"]);
+    SECTIONS.forEach((section) => {
+      section.items.forEach((item) => {
+        rows.push([
+          section.id,
+          item.code,
+          item.label,
+          data.ratings?.[item.code] ?? "",
+          data.comments?.[item.code] ?? "",
+        ]);
+      });
+    });
+    rows.push([]);
+    rows.push(["Average A", data.averages?.A ?? ""]);
+    rows.push(["Average B", data.averages?.B ?? ""]);
+    rows.push(["Average C", data.averages?.C ?? ""]);
+    rows.push(["Average Overall", data.averages?.overall ?? ""]);
+    rows.push(["Mapped Grade", data.averages?.mapped?.grade ?? ""]);
+    rows.push(["Mapped Grade Description", data.averages?.mapped?.text ?? ""]);
+    return rows.map((row) => row.map(toCsvValue).join(",")).join("\r\n");
+  }
+
+  function downloadBlob(contents, fileName, mimeType) {
+    const blob = new Blob([contents], { type: mimeType });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    URL.revokeObjectURL(link.href);
+    document.body.removeChild(link);
+  }
+
+  async function submitToSheets() {
+    if (!SHEETS_ENDPOINT) {
+      alert("❌ Tetapkan URL Google Apps Script dahulu.");
+      return;
+    }
+
+    const button = elements.btnSubmit;
+    const originalLabel = button ? button.textContent : "";
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Menghantar…";
+    }
+
+    try {
+      const payload = collectData();
+      const headers = { "Content-Type": "application/json" };
+      if (API_KEY) {
+        headers["X-API-Key"] = API_KEY;
+      }
+      const response = await fetch(SHEETS_ENDPOINT, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+        mode: "cors",
+      });
+      const text = await response.text();
+      if (!response.ok) {
+        throw new Error(`Status ${response.status}: ${text}`);
+      }
+      if (!/ok/i.test(text)) {
+        // Apps Script might return JSON, fallback to simple OK text
+        try {
+          const parsed = JSON.parse(text);
+          if (!parsed.success) {
+            throw new Error(parsed.error || text);
+          }
+        } catch (parseErr) {
+          // ignore JSON parse failure; treat as success message
+        }
+      }
+      alert("✅ Borang berjaya dihantar ke Google Sheets.");
+    } catch (error) {
+      console.error("Submit error", error);
+      alert(`❌ Gagal menghantar borang: ${error.message}`);
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = originalLabel || "Hantar ke Google Sheets";
+      }
+    }
+  }
+
+  function handleRubricClick(event) {
+    const btn = event.target.closest("[data-rubric]");
+    if (!btn) return;
+    const code = btn.getAttribute("data-rubric");
+    const rubric = RUBRICS[code];
+    if (!rubric) return;
+    elements.rubricTitle.textContent = `${code} — ${rubric.title || "Rubrik"}`;
+    elements.rubricSubtitle.textContent = rubric.prompt || "Deskriptor 1–5";
+    elements.rubricBody.innerHTML = "";
+    RATING_SCALE.forEach((level) => {
+      const row = document.createElement("tr");
+      row.className = "border-b last:border-0";
+      row.innerHTML = `
+        <td class="w-28 py-3 pr-2 align-top font-medium">${level}</td>
+        <td class="py-3 pr-2">${rubric.levels?.[level] || "-"}</td>
+      `;
+      elements.rubricBody.appendChild(row);
+    });
+    elements.rubricModal.showModal();
+  }
+
+  function bindEvents() {
+    if (elements.metaLevel) {
+      elements.metaLevel.addEventListener("change", () => {
+        populateSubjects(elements.metaLevel.value);
+        elements.metaSubject.value = "";
+        const eventDetail = { detail: { level: elements.metaLevel.value } };
+        document.dispatchEvent(new CustomEvent("meta-level-changed", eventDetail));
+      });
+    }
+
+    if (elements.metaSubject) {
+      elements.metaSubject.addEventListener("change", () => {
+        document.dispatchEvent(
+          new CustomEvent("meta-subject-changed", {
+            detail: { level: elements.metaLevel.value, subject: elements.metaSubject.value },
+          })
+        );
+      });
+    }
+
+    if (elements.formContainer) {
+      elements.formContainer.addEventListener("change", (event) => {
+        if (event.target.matches("input[type=radio]")) {
+          refreshSummaries();
+        }
+      });
+      elements.formContainer.addEventListener("input", (event) => {
+        if (event.target.tagName === "TEXTAREA") {
+          refreshSummaries();
+        }
+      });
+      elements.formContainer.addEventListener("click", handleRubricClick);
+    }
+
+    if (elements.btnSave) elements.btnSave.addEventListener("click", handleSaveDraft);
+    if (elements.btnLoad) elements.btnLoad.addEventListener("click", handleLoadDraft);
+    if (elements.btnJSON) {
+      elements.btnJSON.addEventListener("click", () => {
+        const data = collectData();
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        downloadBlob(JSON.stringify(data, null, 2), `btstpa-${timestamp}.json`, "application/json");
+      });
+    }
+    if (elements.btnCSV) {
+      elements.btnCSV.addEventListener("click", () => {
+        const data = collectData();
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        downloadBlob(buildCsv(data), `btstpa-${timestamp}.csv`, "text/csv;charset=utf-8");
+      });
+    }
+    if (elements.btnSubmit) elements.btnSubmit.addEventListener("click", submitToSheets);
+  }
+
+  function init() {
+    populateSchools();
+    populateSimpleSelect("metaClassYear", CLASS_YEARS, "Pilih/Select…");
+    populateSimpleSelect("metaCluster", CLUSTERS, "Pilih/Select…");
+    populateSimpleSelect("metaMethod", METHODS_OF_LEARNING, "Pilih kaedah…");
+    populateLevels();
+    populateSubjects("");
+    renderSections();
+    refreshSummaries();
+    bindEvents();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
