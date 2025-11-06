@@ -1034,21 +1034,25 @@ const RUBRICS = {
       button.disabled = true;
       button.textContent = "Menghantar…";
     }
-
-    try {
-     const payload = collectData();
+try {
+      const payload = collectData();
       if (API_KEY) {
         payload.apiKey = API_KEY;
       }
-      const headers = { "Content-Type": "application/json" };
+      const headers = {};
       if (API_KEY) {
+        headers["Content-Type"] = "application/json";
         headers["X-API-Key"] = API_KEY;
+      } else {
+        // Use a "simple" request header to avoid CORS preflight requests that
+        // Google Apps Script cannot respond to. The payload is still JSON so we
+        // can parse it on the server.
+        headers["Content-Type"] = "text/plain;charset=utf-8";
       }
       const response = await fetch(SHEETS_ENDPOINT, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
-        mode: "cors",
       });
       const text = await response.text();
       if (!response.ok) {
