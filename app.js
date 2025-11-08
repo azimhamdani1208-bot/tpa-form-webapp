@@ -14,7 +14,7 @@
     5: "Cemerlang",
   };
 
-  const metaFieldIds = [
+   const metaFieldIds = [
     "metaTeacher",
     "metaLevel",
     "metaSubject",
@@ -27,6 +27,20 @@
     "metaClassName",
     "metaStudentCount",
   ];
+
+  const META_FIELD_LABELS = {
+    metaTeacher: "Nama Guru",
+    metaLevel: "Tahap/Aras",
+    metaSubject: "Mata Pelajaran",
+    metaEvaluator: "Penilai",
+    metaDate: "Tarikh",
+    metaSchool: "Sekolah",
+    metaCluster: "Kluster",
+    metaMethod: "Kaedah Pembelajaran",
+    metaClassYear: "Tahun/Class",
+    metaClassName: "Nama Kelas",
+    metaStudentCount: "Jumlah Pelajar",
+  };
 
   const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyl8EpsOPEJjXLU-DQ-_NmdD63KQJpQ2lbrUiysfoye9qI3StWgrn0eA_WxG9PJqwO_EQ/exec";
   const DEFAULT_API_KEY = "";
@@ -833,12 +847,25 @@ const RUBRICS = {
     return total / values.length;
   }
 
-  function overallAverage() {
+ function overallAverage() {
     const allCodes = SECTIONS.flatMap((section) => section.items.map((item) => item.code));
     const values = allCodes.map(numericValue).filter((value) => value !== null);
     if (!values.length) return null;
     const total = values.reduce((sum, value) => sum + value, 0);
     return total / values.length;
+  }
+
+  function buildRatingMatrix(ratings) {
+    const headers = [];
+    const values = [];
+    SECTIONS.forEach((section) => {
+      section.items.forEach((item) => {
+        headers.push(item.code);
+        const value = ratings?.[item.code];
+        values.push(value == null ? "" : value);
+      });
+    });
+    return { headers, values };
   }
 
   function mapGrade(avg) {
@@ -986,7 +1013,7 @@ const RUBRICS = {
     const rows = [];
     rows.push(["Field", "Value"]);
     metaFieldIds.forEach((id) => {
-      rows.push([id, data.meta?.[id] ?? ""]);
+      rows.push([id, data.meta?.[id] ?? ""])
     });
     rows.push([]);
     rows.push(["Section", "Code", "Label", "Rating", "Comment"]);
@@ -1006,9 +1033,50 @@ const RUBRICS = {
     rows.push(["Average B", data.averages?.B ?? ""]);
     rows.push(["Average C", data.averages?.C ?? ""]);
     rows.push(["Average Overall", data.averages?.overall ?? ""]);
-    rows.push(["Mapped Grade", data.averages?.mapped?.grade ?? ""]);
+ rows.push(["Mapped Grade", data.averages?.mapped?.grade ?? ""]);
     rows.push(["Mapped Grade Description", data.averages?.mapped?.text ?? ""]);
     return rows.map((row) => row.map(toCsvValue).join(",")).join("\r\n");
+  }
+
+  function buildSheetPayload(data) {
+    const metaHeaders = metaFieldIds.map((id) => META_FIELD_LABELS[id] || id);
+    const aspectItems = [];
+    SECTIONS.forEach((section) => {
+      section.items.forEach((item) => {
+        aspectItems.push(item);
+      });
+    });
+    const aspectHeaders = aspectItems.map((item) => `${item.code}`);
+    const commentHeaders = aspectItems.map((item) => `${item.code} Komen`);
+    const summaryHeaders = [
+      "Purata A",
+      "Purata B",
+      "Purata C",
+      "Purata Keseluruhan",
+      "Gred Dipetakan",
+      "Keterangan Gred",
+    ];
+
+    const metaValues = metaFieldIds.map((id) => data.meta?.[id] ?? "");
+    const aspectValues = aspectItems.map((item) => data.ratings?.[item.code] ?? "");
+    const commentValues = aspectItems.map((item) => data.comments?.[item.code] ?? "");
+    const summaryValues = [
+      data.averages?.A ?? "",
+      data.averages?.B ?? "",
+      data.averages?.C ?? "",
+      data.averages?.overall ?? "",
+      data.averages?.mapped?.grade ?? "",
+      data.averages?.mapped?.text ?? "",
+    ];
+
+    const headers = [...metaHeaders, ...aspectHeaders, ...commentHeaders, ...summaryHeaders];
+    const values = [...metaValues, ...aspectValues, ...commentValues, ...summaryValues];
+
+    return {
+      headers,
+      values,
+      rows: [headers, values],
+    };
   }
 
   function downloadBlob(contents, fileName, mimeType) {
@@ -1036,7 +1104,8 @@ const RUBRICS = {
     }
 
    try {
-      const payload = collectData();
+     const payload = collectData();
+      payload.sheet = buildSheetPayload(payload);
       if (API_KEY) {
         payload.apiKey = API_KEY;
       }
