@@ -14,7 +14,7 @@
     5: "Cemerlang",
   };
 
-   const metaFieldIds = [
+  const metaFieldIds = [
     "metaTeacher",
     "metaLevel",
     "metaSubject",
@@ -743,7 +743,7 @@ const RUBRICS = {
   }
 
   function infoButton(code) {
-    return `<button type="button" data-rubric="${code}" class="ml-2 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-slate-100 text-slate-700 hover:bg-slate-200" title="Lihat rubrik ${code}">i</button>`;
+    return `<button type="button" data-rubric="${code}" class="tpa-info-button" title="Lihat rubrik ${code}">i</button>`;
   }
 
   function getDescriptorSnippet(code, level) {
@@ -753,30 +753,32 @@ const RUBRICS = {
     return escapeAttr(snippet);
   }
 
-  function renderSection(section) {
+function renderSection(section) {
     const showNA = section.items.some((item) => item.allowNA);
     const card = document.createElement("section");
-    card.className = "rounded-2xl bg-white p-6 shadow";
+    card.className = "tpa-section";
     card.innerHTML = `
-      <header class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <header class="tpa-section-header">
         <div>
-          <h2 class="text-lg font-semibold">${section.title}</h2>
-          <p class="text-sm text-slate-500">${section.note}</p>
+          <h2>${section.title}</h2>
+          <p>${section.note}</p>
         </div>
-        <div class="rounded-lg bg-slate-100 px-3 py-1 text-sm">
-          <span class="text-slate-500">Purata ${section.id}:</span>
-          <span id="avg-${section.id}" class="font-semibold">–</span>
+        <div class="tpa-section-average">
+          Purata ${section.id}: <span id="avg-${section.id}">–</span>
         </div>
       </header>
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
+      <div class="tpa-table-wrapper">
+        <table class="tpa-section-table">
           <thead>
-            <tr class="border-b text-left text-slate-600">
-              <th class="w-44 py-2 pr-2">Kod</th>
-              <th class="py-2 pr-2">Pernyataan</th>
-              ${RATING_SCALE.map((v) => `<th class="w-16 py-2 text-center">${v}</th>`).join("")}
-              ${showNA ? '<th class="w-16 py-2 text-center">NA</th>' : ""}
-              <th class="w-60 py-2 pr-2">Catatan</th>
+            <tr>
+              <th>Kod<br /><span class="tpa-subhead">Code</span></th>
+              <th>Bidang Fokus<br /><span class="tpa-subhead">Focus Areas</span></th>
+              ${RATING_SCALE.map(
+                (value) =>
+                  `<th>Gred ${value}<span class="tpa-grade-label">${GRADE_LABELS[value]}</span></th>`
+              ).join("")}
+              ${showNA ? '<th>NA<span class="tpa-grade-label">Tidak Berkaitan</span></th>' : ""}
+              <th>Catatan<br /><span class="tpa-subhead">Remarks</span></th>
             </tr>
           </thead>
           <tbody id="tbody-${section.id}"></tbody>
@@ -788,29 +790,28 @@ const RUBRICS = {
     const tbody = card.querySelector(`#tbody-${section.id}`);
     section.items.forEach((item) => {
       const tr = document.createElement("tr");
-      tr.className = "border-b align-top last:border-0";
       const hasRubric = Boolean(RUBRICS[item.code]);
       const ratingCells = RATING_SCALE.map(
         (value) => `
-          <td class="rating-cell py-2 pr-2 text-center">
+          <td class="rating-cell">
             <input type="radio" name="${item.code}" value="${value}" aria-label="${item.code}=${value}" title="${getDescriptorSnippet(item.code, value)}" />
           </td>
         `
       ).join("");
       const naCell = showNA
         ? `
-          <td class="py-2 pr-2 text-center">
+          <td class="rating-cell">
             ${item.allowNA ? `<input type="radio" name="${item.code}" value="NA" aria-label="${item.code}=NA" title="Tidak berkenaan" />` : ""}
           </td>
         `
         : "";
       tr.innerHTML = `
-        <td class="whitespace-nowrap py-2 pr-2 font-medium">${item.code}${hasRubric ? infoButton(item.code) : ""}</td>
-        <td class="py-2 pr-2">${item.label}</td>
+        <td>${item.code}${hasRubric ? infoButton(item.code) : ""}</td>
+        <td>${item.label}</td>
         ${ratingCells}
         ${naCell}
-        <td class="py-2 pr-2">
-          <textarea name="${item.code}_comment" class="w-full rounded-lg border-slate-300" rows="1" placeholder="Catatan ringkas..."></textarea>
+        <td>
+          <textarea name="${item.code}_comment" class="tpa-textarea" rows="1" placeholder="Catatan ringkas..."></textarea>
         </td>
       `;
       tbody.appendChild(tr);
@@ -1152,12 +1153,11 @@ const RUBRICS = {
     elements.rubricTitle.textContent = `${code} — ${rubric.title || "Rubrik"}`;
     elements.rubricSubtitle.textContent = rubric.prompt || "Deskriptor 1–5";
     elements.rubricBody.innerHTML = "";
-    RATING_SCALE.forEach((level) => {
+RATING_SCALE.forEach((level) => {
       const row = document.createElement("tr");
-      row.className = "border-b last:border-0";
       row.innerHTML = `
-        <td class="w-28 py-3 pr-2 align-top font-medium">${level}</td>
-        <td class="py-3 pr-2">${rubric.levels?.[level] || "-"}</td>
+        <td>${level}</td>
+        <td>${rubric.levels?.[level] || "-"}</td>
       `;
       elements.rubricBody.appendChild(row);
     });

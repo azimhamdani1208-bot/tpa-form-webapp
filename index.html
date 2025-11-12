@@ -4,161 +4,164 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BTS-TPA 2.0 — Borang Penilaian + Rubrik</title>
-
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Custom styles -->
   <link rel="stylesheet" href="./styles.css" />
 </head>
-<body class="bg-slate-50 text-slate-800">
-  <header class="sticky-head border-b bg-white">
-    <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-4">
-      <div class="flex-1">
-        <h1 class="text-xl font-semibold">BTS-TPA 2.0 — Borang Penilaian + Rubrik (Wording Tepat • Lengkap)</h1>
-        <p class="text-sm text-slate-500">
-          Skala 1–5 berpandukan rubrik; klik “i” untuk deskriptor penuh atau halakan tetikus pada pilihan 1–5 untuk ringkasan.
-        </p>
+<body class="tpa-body">
+  <header class="tpa-toolbar no-print">
+    <div class="tpa-toolbar-inner">
+      <div class="tpa-toolbar-text">
+        <h1>BTS-TPA 2.0 — Borang Penilaian + Rubrik (Wording Tepat • Lengkap)</h1>
+        <p>Skala 1–5 berpandukan rubrik; klik “i” untuk deskriptor penuh atau halakan tetikus pada pilihan 1–5 untuk ringkasan.</p>
       </div>
-      <div class="no-print flex flex-wrap justify-end gap-2">
-        <button id="btnSave" class="rounded-xl bg-sky-600 px-3 py-2 text-white hover:bg-sky-700">Simpan Draf</button>
-        <button id="btnLoad" class="rounded-xl bg-slate-200 px-3 py-2 hover:bg-slate-300">Muat Draf</button>
-        <button id="btnJSON" class="rounded-xl bg-emerald-600 px-3 py-2 text-white hover:bg-emerald-700">Eksport JSON</button>
-        <button id="btnCSV" class="rounded-xl bg-amber-500 px-3 py-2 text-white hover:bg-amber-600">Eksport CSV</button>
-        <button id="btnSubmit" class="rounded-xl bg-indigo-600 px-3 py-2 text-white hover:bg-indigo-700">Hantar ke Google Sheets</button>
-        <button type="button" class="rounded-xl bg-slate-800 px-3 py-2 text-white hover:bg-black" onclick="window.print()">Cetak</button>
+      <div class="tpa-toolbar-actions">
+        <button id="btnSave" class="tpa-btn">Simpan Draf</button>
+        <button id="btnLoad" class="tpa-btn tpa-btn-secondary">Muat Draf</button>
+        <button id="btnJSON" class="tpa-btn tpa-btn-success">Eksport JSON</button>
+        <button id="btnCSV" class="tpa-btn tpa-btn-warning">Eksport CSV</button>
+        <button id="btnSubmit" class="tpa-btn tpa-btn-accent">Hantar ke Google Sheets</button>
+        <button type="button" class="tpa-btn" onclick="window.print()">Cetak</button>
       </div>
     </div>
   </header>
 
-  <main class="mx-auto max-w-7xl px-4 py-6">
-    <!-- Metadata -->
-    <section class="mb-6 grid gap-4 sm:grid-cols-2">
-      <div class="rounded-2xl bg-white p-4 shadow">
-        <label class="block text-sm font-medium">Nama Guru</label>
-        <input id="metaTeacher" class="mt-1 w-full rounded-xl border-slate-300" placeholder="Nama guru dinilai" />
-
-        <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <label class="block text-sm font-medium">Tahap/Aras</label>
-            <select id="metaLevel" class="mt-1 w-full rounded-xl border-slate-300">
-              <option value="" disabled selected>Pilih tahap…</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium">Mata Pelajaran</label>
-            <select id="metaSubject" class="mt-1 w-full rounded-xl border-slate-300" disabled>
-              <option value="" disabled selected>Pilih subjek…</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <label class="block text-sm font-medium">Kluster</label>
-            <select id="metaCluster" class="mt-1 w-full rounded-xl border-slate-300">
-              <option value="" disabled selected>Pilih/Select…</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium">Kaedah Pembelajaran</label>
-            <select id="metaMethod" class="mt-1 w-full rounded-xl border-slate-300">
-              <option value="" disabled selected>Pilih kaedah…</option>
-            </select>
-          </div>
+  <main class="tpa-main">
+    <section class="tpa-title-panel">
+      <div class="tpa-title-left">
+        <div class="tpa-title-text">
+          <p class="tpa-title-line">KEMENTERIAN PENDIDIKAN</p>
+          <p class="tpa-title-line">MINISTRY OF EDUCATION</p>
+          <p class="tpa-title-line">PENILAIAN PRESTASI GURU</p>
+          <p class="tpa-title-line">TEACHER PERFORMANCE APPRAISAL</p>
         </div>
       </div>
-
-      <div class="rounded-2xl bg-white p-4 shadow">
-        <label class="block text-sm font-medium">Penilai</label>
-        <input id="metaEvaluator" class="mt-1 w-full rounded-xl border-slate-300" placeholder="Nama penilai" />
-        <div class="mt-3 grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-sm font-medium">Tarikh</label>
-            <input id="metaDate" type="date" class="mt-1 w-full rounded-xl border-slate-300" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium">Sekolah</label>
-            <select id="metaSchool" class="mt-1 w-full rounded-xl border-slate-300">
-              <option value="" disabled selected>Pilih sekolah…</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div>
-            <label class="block text-sm font-medium">Tahun / Class</label>
-            <select id="metaClassYear" class="mt-1 w-full rounded-xl border-slate-300">
-              <option value="" disabled selected>Pilih/Select…</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium">Nama Kelas</label>
-            <input id="metaClassName" class="mt-1 w-full rounded-xl border-slate-300" placeholder="Contoh: 7B / 5 Cemerlang" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium">Jumlah Pelajar</label>
-            <input id="metaStudentCount" type="number" min="0" class="mt-1 w-full rounded-xl border-slate-300" placeholder="cth: 28" />
-          </div>
-        </div>
+      <div class="tpa-grade-card">
+        <p class="tpa-grade-note">Sila nyatakan jika Guru adalah LC, LP, LCT, CBT atau JPI pada ruangan Catatan.</p>
+        <table class="tpa-grade-table">
+          <thead>
+            <tr>
+              <th>Gred<br /><span>Grade</span></th>
+              <th>Peratus<br /><span>Percentage</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1 (Tidak Memuaskan)</td>
+              <td>Bawah 40</td>
+            </tr>
+            <tr>
+              <td>2 (Memuaskan)</td>
+              <td>40–50</td>
+            </tr>
+            <tr>
+              <td>3 (Baik)</td>
+              <td>51–70</td>
+            </tr>
+            <tr>
+              <td>4 (Sangat Baik)</td>
+              <td>71–90</td>
+            </tr>
+            <tr>
+              <td>5 (Cemerlang)</td>
+              <td>91 dan ke atas</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
-    <!-- Guidance -->
-    <section class="mb-6 rounded-2xl bg-white p-4 shadow">
-      <h2 class="mb-2 text-lg font-semibold">Panduan Ringkas</h2>
-      <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600">
+    <section class="tpa-metadata">
+      <h2 class="tpa-section-title">Butiran Pencerapan / Lesson Observation Details</h2>
+      <table class="tpa-metadata-table">
+        <tr>
+          <th>Nama Guru<br /><span>Teacher's Name</span></th>
+          <td colspan="3"><input id="metaTeacher" class="tpa-input" placeholder="Nama guru dinilai" /></td>
+        </tr>
+        <tr>
+          <th>Tahap / Aras</th>
+          <td><select id="metaLevel" class="tpa-input"><option value="" disabled selected>Pilih tahap…</option></select></td>
+          <th>Mata Pelajaran<br /><span>Subject</span></th>
+          <td><select id="metaSubject" class="tpa-input" disabled><option value="" disabled selected>Pilih subjek…</option></select></td>
+        </tr>
+        <tr>
+          <th>Penilai<br /><span>Evaluator</span></th>
+          <td><input id="metaEvaluator" class="tpa-input" placeholder="Nama penilai" /></td>
+          <th>Tarikh<br /><span>Date</span></th>
+          <td><input id="metaDate" type="date" class="tpa-input" /></td>
+        </tr>
+        <tr>
+          <th>Sekolah<br /><span>School</span></th>
+          <td><select id="metaSchool" class="tpa-input"><option value="" disabled selected>Pilih sekolah…</option></select></td>
+          <th>Kluster<br /><span>Cluster</span></th>
+          <td><select id="metaCluster" class="tpa-input"><option value="" disabled selected>Pilih/Select…</option></select></td>
+        </tr>
+        <tr>
+          <th>Kaedah Pembelajaran<br /><span>Mode of Learning</span></th>
+          <td><select id="metaMethod" class="tpa-input"><option value="" disabled selected>Pilih kaedah…</option></select></td>
+          <th>Tahun / Class</th>
+          <td><select id="metaClassYear" class="tpa-input"><option value="" disabled selected>Pilih/Select…</option></select></td>
+        </tr>
+        <tr>
+          <th>Nama Kelas<br /><span>Class Name</span></th>
+          <td><input id="metaClassName" class="tpa-input" placeholder="Contoh: 7B / 5 Cemerlang" /></td>
+          <th>Jumlah Pelajar<br /><span>Number of Students</span></th>
+          <td><input id="metaStudentCount" type="number" min="0" class="tpa-input" placeholder="cth: 28" /></td>
+        </tr>
+      </table>
+    </section>
+
+    <section class="tpa-guidance">
+      <h2 class="tpa-section-title">Panduan Ringkas</h2>
+      <ul>
         <li>Skala: 1 = Tidak Memuaskan, 2 = Memuaskan, 3 = Baik, 4 = Sangat Baik, 5 = Cemerlang.</li>
-        <li>Klik <span class="inline-block rounded bg-slate-100 px-2 py-0.5 text-xs">i</span> di sebelah kod untuk deskriptor penuh; halakan tetikus pada Grade 1–5 untuk ringkasan.</li>
+        <li>Klik <span class="tpa-info-pill">i</span> di sebelah kod untuk deskriptor penuh; halakan tetikus pada Gred 1–5 untuk ringkasan.</li>
       </ul>
     </section>
 
-    <!-- Sections rendered here -->
-    <div id="formContainer" class="space-y-10"></div>
+    <div id="formContainer" class="tpa-section-list"></div>
 
-    <!-- Totals -->
-    <section class="mt-10 rounded-2xl bg-white p-6 shadow">
-      <h2 class="mb-4 text-lg font-semibold">Keputusan Ringkas</h2>
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="rounded-xl border p-4">
-          <div class="text-sm text-slate-500">Purata Bahagian A</div>
-          <div id="avgA" class="text-2xl font-bold">–</div>
-        </div>
-        <div class="rounded-xl border p-4">
-          <div class="text-sm text-slate-500">Purata Bahagian B</div>
-          <div id="avgB" class="text-2xl font-bold">–</div>
-        </div>
-        <div class="rounded-xl border p-4">
-          <div class="text-sm text-slate-500">Purata Bahagian C</div>
-          <div id="avgC" class="text-2xl font-bold">–</div>
-        </div>
-        <div class="rounded-xl border p-4">
-          <div class="text-sm text-slate-500">Purata Keseluruhan</div>
-          <div id="avgAll" class="text-2xl font-bold">–</div>
-          <div class="text-sm" id="gradeAll"></div>
-        </div>
-      </div>
+    <section class="tpa-summary">
+      <h2 class="tpa-section-title">Keputusan Ringkas</h2>
+      <table class="tpa-summary-table">
+        <tbody>
+          <tr>
+            <th>Purata Bahagian A</th>
+            <td id="avgA">–</td>
+          </tr>
+          <tr>
+            <th>Purata Bahagian B</th>
+            <td id="avgB">–</td>
+          </tr>
+          <tr>
+            <th>Purata Bahagian C</th>
+            <td id="avgC">–</td>
+          </tr>
+          <tr>
+            <th>Purata Keseluruhan</th>
+            <td id="avgAll">–</td>
+          </tr>
+        </tbody>
+      </table>
+      <p id="gradeAll" class="tpa-summary-grade"></p>
     </section>
 
-    <p class="mt-6 text-xs text-slate-500">Deskriptor rubrik dipetik daripada “Handbook BTS-TPA 2.0 January 2021”.</p>
+    <p class="tpa-footnote">Deskriptor rubrik dipetik daripada “Handbook BTS-TPA 2.0 January 2021”.</p>
   </main>
 
-  <!-- Rubric Modal -->
-  <dialog id="rubricModal" class="w-11/12 rounded-2xl md:w-3/4 lg:w-2/3">
-    <form method="dialog" class="m-0 p-0">
-      <div class="flex items-start gap-3 border-b p-4">
-        <div class="flex-1">
-          <h3 id="rubricTitle" class="text-lg font-semibold">Rubrik</h3>
-          <p id="rubricSubtitle" class="text-sm text-slate-500"></p>
+  <dialog id="rubricModal" class="tpa-dialog">
+    <form method="dialog" class="tpa-dialog-form">
+      <div class="tpa-dialog-header">
+        <div>
+          <h3 id="rubricTitle">Rubrik</h3>
+          <p id="rubricSubtitle"></p>
         </div>
-        <button class="rounded-lg bg-slate-100 px-2 py-1">Tutup</button>
+        <button class="tpa-btn tpa-btn-secondary">Tutup</button>
       </div>
-      <div class="max-h-[70vh] overflow-auto p-4">
-        <table class="w-full text-sm">
+      <div class="tpa-dialog-body">
+        <table class="tpa-rubric-table">
           <thead>
-            <tr class="border-b text-left text-slate-600">
-              <th class="w-28 py-2 pr-2">Gred</th>
-              <th class="py-2 pr-2">Deskriptor</th>
+            <tr>
+              <th>Gred</th>
+              <th>Deskriptor</th>
             </tr>
           </thead>
           <tbody id="rubricBody"></tbody>
@@ -167,10 +170,9 @@
     </form>
   </dialog>
 
-  <!-- Override these values when deploying -->
   <script>
     window.SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyl8EpsOPEJjXLU-DQ-_NmdD63KQJpQ2lbrUiysfoye9qI3StWgrn0eA_WxG9PJqwO_EQ/exec";
-    window.API_KEY = ""; // Opsyenal: padankan dengan Google Apps Script jika digunakan
+    window.API_KEY = "";
   </script>
   <script src="./app.js" defer></script>
 </body>
