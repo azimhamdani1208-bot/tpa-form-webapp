@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BTS-TPA 2.0 — Dashboard</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="tpa-body">
+  <main class="dashboard-shell">
+    <header class="dashboard-header">
+      <div>
+        <h1>Dashboard Penilaian</h1>
+        <p id="dashboardRole"></p>
+      </div>
+      <div>
+        <button id="btnNewSubmission" class="tpa-btn tpa-btn-accent" type="button">Borang Baharu</button>
+        <button id="btnExport" class="tpa-btn tpa-btn-warning" type="button">Eksport CSV</button>
+        <button id="btnLogout" class="tpa-btn tpa-btn-secondary" type="button">Log keluar</button>
+      </div>
+    </header>
+
+    <section id="dashboardContent"></section>
+  </main>
+  <script type="module" src="./dashboard.js" defer></script>
+</body>
+</html>

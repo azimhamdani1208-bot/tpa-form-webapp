@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BTS-TPA 2.0 — Log Masuk</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="tpa-body">
+  <main class="auth-shell">
+    <section class="auth-card">
+      <h1>Log Masuk</h1>
+      <p>Sila gunakan akaun yang telah disediakan oleh pentadbir.</p>
+      <form id="loginForm">
+        <label class="auth-field">
+          Emel
+          <input id="email" type="email" autocomplete="username" required />
+        </label>
+        <label class="auth-field">
+          Kata Laluan
+          <input id="password" type="password" autocomplete="current-password" required />
+        </label>
+        <p id="loginError" class="auth-error" role="alert"></p>
+        <button class="tpa-btn tpa-btn-accent" type="submit">Log Masuk</button>
+      </form>
+    </section>
+  </main>
+  <script type="module" src="./login.js" defer></script>
+</body>
+</html>

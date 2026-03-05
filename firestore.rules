@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return signedIn() && userRole() == "admin";
+    }
+
+    function isUser() {
+      return signedIn() && userRole() == "user";
+    }
+
+    function isViewer() {
+      return signedIn() && userRole() == "viewer";
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /submissions/{submissionId} {
+      allow create: if signedIn()
+        && (isAdmin() || isUser())
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      // Assumption: viewer role can read all submissions in a read-only dashboard.
+      allow read: if isAdmin()
+        || isViewer()
+        || (isUser() && resource.data.createdBy == request.auth.uid);
+      allow update, delete: if false;
+    }
+  }
+}
