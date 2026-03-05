@@ -18,13 +18,15 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = window.FIREBASE_CONFIG || {
+
+const firebaseConfig = {
   apiKey: "AIzaSyC6tZOGFOpiNed6FtyMMpNqA7Bdtt47M_o",
   authDomain: "bts-tpa-form.firebaseapp.com",
   projectId: "bts-tpa-form",
   storageBucket: "bts-tpa-form.firebasestorage.app",
   messagingSenderId: "548724875939",
   appId: "1:548724875939:web:69a9f1a152a8771c325516"
+};
 };
 
 const app = initializeApp(firebaseConfig);
