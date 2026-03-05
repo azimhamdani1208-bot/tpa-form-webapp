@@ -1,3 +1,6 @@
+import { addDoc, collection, db, serverTimestamp } from "./firebase.js";
+import { requireAuth, signOutUser } from "./auth.js";
+
 (() => {
   "use strict";
 
@@ -28,25 +31,8 @@
     "metaStudentCount",
   ];
 
-  const META_FIELD_LABELS = {
-    metaTeacher: "Nama Guru",
-    metaLevel: "Tahap/Aras",
-    metaSubject: "Mata Pelajaran",
-    metaEvaluator: "Penilai",
-    metaDate: "Tarikh",
-    metaSchool: "Sekolah",
-    metaCluster: "Kluster",
-    metaMethod: "Kaedah Pembelajaran",
-    metaClassYear: "Tahun/Class",
-    metaClassName: "Nama Kelas",
-    metaStudentCount: "Jumlah Pelajar",
-  };
-
-  const DEFAULT_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyl8EpsOPEJjXLU-DQ-_NmdD63KQJpQ2lbrUiysfoye9qI3StWgrn0eA_WxG9PJqwO_EQ/exec";
-  const DEFAULT_API_KEY = "";
-
-  const SHEETS_ENDPOINT = (typeof window !== "undefined" && window.SHEETS_ENDPOINT) || DEFAULT_SHEETS_ENDPOINT;
-  const API_KEY = (typeof window !== "undefined" && window.API_KEY) || DEFAULT_API_KEY;
+  let currentUser = null;
+  let currentRole = null;
 
   // ------------------------------------------------------------
   // Static data
@@ -686,6 +672,9 @@ const RUBRICS = {
     rubricBody: document.getElementById("rubricBody"),
     rubricTitle: document.getElementById("rubricTitle"),
     rubricSubtitle: document.getElementById("rubricSubtitle"),
+    btnLogout: document.getElementById("btnLogout"),
+    authUser: document.getElementById("authUser"),
+    btnDashboard: document.getElementById("btnDashboard"),
   };
 
   const uniqueSorted = (list) => Array.from(new Set(list.map((v) => v.trim()))).sort((a, b) => a.localeCompare(b, "ms"));
@@ -1039,47 +1028,6 @@ function renderSection(section) {
     return rows.map((row) => row.map(toCsvValue).join(",")).join("\r\n");
   }
 
-  function buildSheetPayload(data) {
-    const metaHeaders = metaFieldIds.map((id) => META_FIELD_LABELS[id] || id);
-    const aspectItems = [];
-    SECTIONS.forEach((section) => {
-      section.items.forEach((item) => {
-        aspectItems.push(item);
-      });
-    });
-    const aspectHeaders = aspectItems.map((item) => `${item.code}`);
-    const commentHeaders = aspectItems.map((item) => `${item.code} Komen`);
-    const summaryHeaders = [
-      "Purata A",
-      "Purata B",
-      "Purata C",
-      "Purata Keseluruhan",
-      "Gred Dipetakan",
-      "Keterangan Gred",
-    ];
-
-    const metaValues = metaFieldIds.map((id) => data.meta?.[id] ?? "");
-    const aspectValues = aspectItems.map((item) => data.ratings?.[item.code] ?? "");
-    const commentValues = aspectItems.map((item) => data.comments?.[item.code] ?? "");
-    const summaryValues = [
-      data.averages?.A ?? "",
-      data.averages?.B ?? "",
-      data.averages?.C ?? "",
-      data.averages?.overall ?? "",
-      data.averages?.mapped?.grade ?? "",
-      data.averages?.mapped?.text ?? "",
-    ];
-
-    const headers = [...metaHeaders, ...aspectHeaders, ...commentHeaders, ...summaryHeaders];
-    const values = [...metaValues, ...aspectValues, ...commentValues, ...summaryValues];
-
-    return {
-      headers,
-      values,
-      rows: [headers, values],
-    };
-  }
-
   function downloadBlob(contents, fileName, mimeType) {
     const blob = new Blob([contents], { type: mimeType });
     const link = document.createElement("a");
@@ -1091,55 +1039,35 @@ function renderSection(section) {
     document.body.removeChild(link);
   }
 
-  async function submitToSheets() {
-    if (!SHEETS_ENDPOINT) {
-      alert("❌ Tetapkan URL Google Apps Script dahulu.");
+  async function submitToFirestore() {
+    if (!currentUser) {
+      alert("❌ Sila log masuk terlebih dahulu.");
       return;
     }
 
- const button = elements.btnSubmit;
+    const button = elements.btnSubmit;
     const originalLabel = button ? button.textContent : "";
     if (button) {
       button.disabled = true;
       button.textContent = "Menghantar…";
     }
 
-   try {
-     const payload = collectData();
-      payload.sheet = buildSheetPayload(payload);
-      if (API_KEY) {
-        payload.apiKey = API_KEY;
-      }
-      const response = await fetch(SHEETS_ENDPOINT, {
-        method: "POST",
-        mode: "cors",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify(payload),
-      });
-      const text = await response.text();
-      if (!response.ok) {
-        throw new Error(`Status ${response.status}: ${text}`);
-      }
-      let parsed;
-      try {
-        parsed = JSON.parse(text);
-      } catch (parseErr) {
-        // fall back to treating raw text as an error message
-        throw new Error(text || "Respons tidak diketahui daripada pelayan.");
-      }
-      if (!parsed.success) {
-        throw new Error(parsed.error || "Respons pelayan tidak sah.");
-      }
-      alert("✅ Borang berjaya dihantar ke Google Sheets.");
+    try {
+      const payload = collectData();
+      const submission = {
+        ...payload,
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid,
+      };
+      await addDoc(collection(db, "submissions"), submission);
+      alert("✅ Borang berjaya dihantar ke Firestore.");
     } catch (error) {
       console.error("Submit error", error);
       alert(`❌ Gagal menghantar borang: ${error.message}`);
-    } finally { 
+    } finally {
       if (button) {
         button.disabled = false;
-        button.textContent = originalLabel || "Hantar ke Google Sheets";
+        button.textContent = originalLabel || "Hantar";
       }
     }
   }
@@ -1214,10 +1142,31 @@ RATING_SCALE.forEach((level) => {
         downloadBlob(buildCsv(data), `btstpa-${timestamp}.csv`, "text/csv;charset=utf-8");
       });
     }
-    if (elements.btnSubmit) elements.btnSubmit.addEventListener("click", submitToSheets);
+    if (elements.btnSubmit) elements.btnSubmit.addEventListener("click", submitToFirestore);
+    if (elements.btnLogout) {
+      elements.btnLogout.addEventListener("click", async () => {
+        await signOutUser();
+        window.location.href = "./login.html";
+      });
+    }
   }
 
-  function init() {
+  function updateAuthUI() {
+    if (elements.authUser && currentUser) {
+      const label = currentUser.email ? currentUser.email : currentUser.uid;
+      elements.authUser.textContent = `${label} (${currentRole || "user"})`;
+    }
+  }
+
+  async function init() {
+    const authState = await requireAuth({
+      allowRoles: ["admin", "user"],
+      redirectTo: "./login.html",
+      unauthorizedRedirect: "./dashboard.html",
+    });
+    currentUser = authState.user;
+    currentRole = authState.role;
+    updateAuthUI();
     populateSchools();
     populateSimpleSelect("metaClassYear", CLASS_YEARS, "Pilih/Select…");
     populateSimpleSelect("metaCluster", CLUSTERS, "Pilih/Select…");

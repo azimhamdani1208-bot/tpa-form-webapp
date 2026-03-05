@@ -18,8 +18,11 @@
         <button id="btnLoad" class="tpa-btn tpa-btn-secondary">Muat Draf</button>
         <button id="btnJSON" class="tpa-btn tpa-btn-success">Eksport JSON</button>
         <button id="btnCSV" class="tpa-btn tpa-btn-warning">Eksport CSV</button>
-        <button id="btnSubmit" class="tpa-btn tpa-btn-accent">Hantar ke Google Sheets</button>
+        <button id="btnSubmit" class="tpa-btn tpa-btn-accent">Hantar</button>
         <button type="button" class="tpa-btn" onclick="window.print()">Cetak</button>
+        <a id="btnDashboard" class="tpa-btn tpa-btn-secondary" href="./dashboard.html">Dashboard</a>
+        <button id="btnLogout" class="tpa-btn tpa-btn-secondary" type="button">Log keluar</button>
+        <span id="authUser" class="tpa-user"></span>
       </div>
     </div>
   </header>
@@ -170,10 +173,6 @@
     </form>
   </dialog>
 
-  <script>
-    window.SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyl8EpsOPEJjXLU-DQ-_NmdD63KQJpQ2lbrUiysfoye9qI3StWgrn0eA_WxG9PJqwO_EQ/exec";
-    window.API_KEY = "";
-  </script>
-  <script src="./app.js" defer></script>
+  <script type="module" src="./app.js" defer></script>
 </body>
 </html>
