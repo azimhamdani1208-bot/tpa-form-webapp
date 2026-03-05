@@ -19,12 +19,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = window.FIREBASE_CONFIG || {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyC6tZOGFOpiNed6FtyMMpNqA7Bdtt47M_o",
+  authDomain: "bts-tpa-form.firebaseapp.com",
+  projectId: "bts-tpa-form",
+  storageBucket: "bts-tpa-form.firebasestorage.app",
+  messagingSenderId: "548724875939",
+  appId: "1:548724875939:web:69a9f1a152a8771c325516"
 };
 
 const app = initializeApp(firebaseConfig);
