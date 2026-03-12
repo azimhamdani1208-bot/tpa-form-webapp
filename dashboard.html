@@ -1,27 +1,33 @@
-<!DOCTYPE html>
-<html lang="ms">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BTS-TPA 2.0 — Dashboard</title>
-  <link rel="stylesheet" href="./styles.css" />
-</head>
-<body class="tpa-body">
-  <main class="dashboard-shell">
-    <header class="dashboard-header">
-      <div>
-        <h1>Dashboard Penilaian</h1>
-        <p id="dashboardRole"></p>
-      </div>
-      <div>
-        <button id="btnNewSubmission" class="tpa-btn tpa-btn-accent" type="button">Borang Baharu</button>
-        <button id="btnExport" class="tpa-btn tpa-btn-warning" type="button">Eksport CSV</button>
-        <button id="btnLogout" class="tpa-btn tpa-btn-secondary" type="button">Log keluar</button>
-      </div>
-    </header>
-
-    <section id="dashboardContent"></section>
-  </main>
-  <script type="module" src="./dashboard.js" defer></script>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TPA Dashboard</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <nav id="topNav"></nav>
+    <main class="container">
+      <section class="card">
+        <h1>Dashboard</h1>
+        <div class="grid cards">
+          <div class="card"><h3>Total Observations</h3><p id="totalObservations">0</p></div>
+          <div class="card"><h3>Teachers Observed</h3><p id="teachersObserved">0</p></div>
+          <div class="card"><h3>Completion Status</h3><p id="completionStatus">0%</p></div>
+        </div>
+        <p id="dashboardStatus" class="status"></p>
+      </section>
+      <section class="card">
+        <h2>Average Score Per Teacher</h2>
+        <canvas id="teacherChart" height="120"></canvas>
+      </section>
+      <section class="card">
+        <h2>Average Score Per School</h2>
+        <canvas id="schoolChart" height="120"></canvas>
+      </section>
+    </main>
+    <script type="module" src="./dashboard.js"></script>
+  </body>
 </html>

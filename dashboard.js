@@ -1,177 +1,97 @@
-import {
-  collection,
-  getDocs,
-  orderBy,
-  query,
-  where,
-  db,
-} from "./firebase.js";
-import { requireAuth, signOutUser } from "./auth.js";
+import { collection, db, getDocs } from "./firebase.js";
+import { requireAuth } from "./auth.js";
+import { renderTopNav } from "./nav.js";
 
-const dashboardContent = document.getElementById("dashboardContent");
-const dashboardRole = document.getElementById("dashboardRole");
-const btnExport = document.getElementById("btnExport");
-const btnNewSubmission = document.getElementById("btnNewSubmission");
-const btnLogout = document.getElementById("btnLogout");
+const dashboardStatus = document.getElementById("dashboardStatus");
 
-let cachedSubmissions = [];
-
-function formatTimestamp(value) {
-  if (!value) return "";
-  if (typeof value.toDate === "function") {
-    return value.toDate().toISOString().split("T")[0];
-  }
-  return String(value);
+function setStatus(message, type = "") {
+  dashboardStatus.className = `status ${type}`;
+  dashboardStatus.textContent = message;
 }
 
-function buildRows(submissions) {
-  return submissions.map((item) => {
-    return {
-      id: item.id,
-      teacher: item.meta?.metaTeacher || "",
-      evaluator: item.meta?.metaEvaluator || "",
-      date: item.meta?.metaDate || "",
-      school: item.meta?.metaSchool || "",
-      average: item.averages?.overall ?? "",
-      grade: item.averages?.mapped?.grade ?? "",
-      createdAt: formatTimestamp(item.createdAt),
-      createdBy: item.createdBy || "",
-    };
+function average(scores) {
+  const values = Object.values(scores || {});
+  if (!values.length) return 0;
+  return values.reduce((sum, value) => sum + Number(value || 0), 0) / values.length;
+}
+
+function aggregate(items, key) {
+  const grouped = {};
+  items.forEach((item) => {
+    const group = item[key] || "Unknown";
+    if (!grouped[group]) grouped[group] = { total: 0, count: 0 };
+    grouped[group].total += item.avg;
+    grouped[group].count += 1;
+  });
+  return grouped;
+}
+
+function createChart(canvasId, label, grouped) {
+  const labels = Object.keys(grouped);
+  const data = labels.map((entry) => grouped[entry].total / grouped[entry].count);
+  const ctx = document.getElementById(canvasId);
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label,
+        data,
+        borderWidth: 1,
+      }],
+    },
+    options: {
+      scales: { y: { beginAtZero: true, suggestedMax: 5 } },
+    },
   });
 }
 
-function renderTable(submissions) {
-  if (!dashboardContent) return;
-  if (!submissions.length) {
-    dashboardContent.innerHTML = "<div class=\"dashboard-empty\">Tiada rekod penilaian ditemui.</div>";
-    return;
-  }
+// Example dashboard query with raw observation data aggregation.
+async function fetchDashboardMetrics() {
+  const [teachersSnap, observationsSnap] = await Promise.all([
+    getDocs(collection(db, "teachers")),
+    getDocs(collection(db, "observations")),
+  ]);
 
-  const rows = buildRows(submissions);
-  const bodyRows = rows
-    .map(
-      (row) => `
-        <tr>
-          <td>${row.teacher}</td>
-          <td>${row.evaluator}</td>
-          <td>${row.date}</td>
-          <td>${row.school}</td>
-          <td>${row.average}</td>
-          <td>${row.grade}</td>
-          <td>${row.createdAt}</td>
-          <td>${row.createdBy}</td>
-        </tr>
-      `
-    )
-    .join("");
+  const teacherMap = new Map();
+  teachersSnap.forEach((entry) => teacherMap.set(entry.id, entry.data()));
 
-  dashboardContent.innerHTML = `
-    <table class="dashboard-table">
-      <thead>
-        <tr>
-          <th>Nama Guru</th>
-          <th>Penilai</th>
-          <th>Tarikh</th>
-          <th>Sekolah</th>
-          <th>Purata</th>
-          <th>Gred</th>
-          <th>Diserahkan</th>
-          <th>UID</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${bodyRows}
-      </tbody>
-    </table>
-  `;
-}
-
-function toCsvValue(value) {
-  const str = value == null ? "" : String(value);
-  if (/[",\n]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
-function buildCsv(submissions) {
-  const rows = [
-    ["Nama Guru", "Penilai", "Tarikh", "Sekolah", "Purata", "Gred", "Diserahkan", "UID"],
-  ];
-  buildRows(submissions).forEach((row) => {
-    rows.push([
-      row.teacher,
-      row.evaluator,
-      row.date,
-      row.school,
-      row.average,
-      row.grade,
-      row.createdAt,
-      row.createdBy,
-    ]);
+  const observations = [];
+  observationsSnap.forEach((entry) => {
+    const value = entry.data();
+    observations.push({
+      ...value,
+      teacherName: teacherMap.get(value.teacherId)?.name || value.teacherId,
+      avg: average(value.scores),
+    });
   });
-  return rows.map((row) => row.map(toCsvValue).join(",")).join("\r\n");
-}
 
-function downloadBlob(contents, fileName, mimeType) {
-  const blob = new Blob([contents], { type: mimeType });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  URL.revokeObjectURL(link.href);
-  document.body.removeChild(link);
-}
-
-async function loadSubmissions({ uid, role }) {
-  const submissionsRef = collection(db, "submissions");
-  let submissionsQuery = query(submissionsRef, orderBy("createdAt", "desc"));
-  if (role === "user") {
-    submissionsQuery = query(submissionsRef, where("createdBy", "==", uid), orderBy("createdAt", "desc"));
-  }
-  const snapshot = await getDocs(submissionsQuery);
-  cachedSubmissions = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
-  renderTable(cachedSubmissions);
-}
-
-function updateRoleUI(role) {
-  if (dashboardRole) {
-    dashboardRole.textContent = `Peranan: ${role}`;
-  }
-  if (btnExport) {
-    btnExport.style.display = role === "admin" ? "inline-flex" : "none";
-  }
-  if (btnNewSubmission) {
-    btnNewSubmission.style.display = role === "viewer" ? "none" : "inline-flex";
-  }
+  return {
+    observations,
+    totalTeachers: teachersSnap.size,
+  };
 }
 
 async function init() {
-  const { user, role } = await requireAuth();
-  updateRoleUI(role);
-  await loadSubmissions({ uid: user.uid, role });
+  setStatus("Loading dashboard...");
+  const { role, profile } = await requireAuth({ allowRoles: ["admin", "observer", "viewer"] });
+  renderTopNav({ role, profile, current: "dashboard" });
 
-  if (btnExport) {
-    btnExport.addEventListener("click", () => {
-      const csv = buildCsv(cachedSubmissions);
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      downloadBlob(csv, `tpa-submissions-${timestamp}.csv`, "text/csv;charset=utf-8");
-    });
-  }
+  const { observations, totalTeachers } = await fetchDashboardMetrics();
+  const teacherAgg = aggregate(observations, "teacherName");
+  const schoolAgg = aggregate(observations, "school");
 
-  if (btnNewSubmission) {
-    btnNewSubmission.addEventListener("click", () => {
-      window.location.href = "./index.html";
-    });
-  }
+  document.getElementById("totalObservations").textContent = String(observations.length);
+  document.getElementById("teachersObserved").textContent = String(Object.keys(teacherAgg).length);
+  const completion = totalTeachers ? (Object.keys(teacherAgg).length / totalTeachers) * 100 : 0;
+  document.getElementById("completionStatus").textContent = `${completion.toFixed(1)}%`;
 
-  if (btnLogout) {
-    btnLogout.addEventListener("click", async () => {
-      await signOutUser();
-      window.location.href = "./login.html";
-    });
-  }
+  createChart("teacherChart", "Average Score", teacherAgg);
+  createChart("schoolChart", "Average Score", schoolAgg);
+  setStatus("Dashboard loaded.", "success");
 }
 
-init();
+init().catch((error) => {
+  console.error("[dashboard] Failed to load", error);
+  setStatus("Unable to load dashboard.", "error");
+});

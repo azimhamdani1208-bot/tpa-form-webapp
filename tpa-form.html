@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TPA Observation Form</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <nav id="topNav"></nav>
+    <main class="container">
+      <section class="card">
+        <h1>TPA Observation Form</h1>
+        <form id="observationForm">
+          <label>Teacher
+            <select id="teacherId" required></select>
+          </label>
+          <label>School
+            <input id="school" required />
+          </label>
+          <label>Observation Date
+            <input id="date" type="date" required />
+          </label>
+          <label>Planning Score (1-5)
+            <input id="planning" type="number" min="1" max="5" required />
+          </label>
+          <label>Delivery Score (1-5)
+            <input id="delivery" type="number" min="1" max="5" required />
+          </label>
+          <label>Classroom Management Score (1-5)
+            <input id="management" type="number" min="1" max="5" required />
+          </label>
+          <label>Remarks
+            <textarea id="remarks" rows="4"></textarea>
+          </label>
+          <button class="btn" type="submit">Submit Observation</button>
+        </form>
+        <p id="observationStatus" class="status"></p>
+      </section>
+    </main>
+    <script type="module" src="./tpa-form.js"></script>
+  </body>
+</html>
