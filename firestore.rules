@@ -7,36 +7,39 @@ service cloud.firestore {
     }
 
     function userRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return signedIn()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
     }
 
     function isAdmin() {
-      return signedIn() && userRole() == "admin";
+      return userRole() == 'admin';
     }
 
-    function isUser() {
-      return signedIn() && userRole() == "user";
+    function isObserver() {
+      return userRole() == 'observer';
     }
 
     function isViewer() {
-      return signedIn() && userRole() == "viewer";
+      return userRole() == 'viewer';
     }
 
-    match /users/{userId} {
-      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
-      allow write: if isAdmin();
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update, delete: if isAdmin();
     }
 
-    match /submissions/{submissionId} {
+    match /teachers/{teacherId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin() || isObserver();
+    }
+
+    match /observations/{observationId} {
+      allow read: if signedIn();
       allow create: if signedIn()
-        && (isAdmin() || isUser())
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.createdAt == request.time;
-      // Assumption: viewer role can read all submissions in a read-only dashboard.
-      allow read: if isAdmin()
-        || isViewer()
-        || (isUser() && resource.data.createdBy == request.auth.uid);
-      allow update, delete: if false;
+        && (isAdmin() || isObserver())
+        && request.resource.data.observerId == request.auth.uid;
+      allow update, delete: if isAdmin();
     }
   }
 }

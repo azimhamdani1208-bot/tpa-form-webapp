@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teacher Details</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <nav id="topNav"></nav>
+    <main class="container">
+      <section class="card">
+        <h1>Teacher Details</h1>
+        <form id="teacherForm" class="grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+          <input type="hidden" id="teacherId" />
+          <label>Name<input id="name" required /></label>
+          <label>Email<input id="email" type="email" required /></label>
+          <label>School<input id="school" required /></label>
+          <label>Department<input id="department" required /></label>
+          <label>Subject<input id="subject" required /></label>
+          <div class="inline" style="grid-column: 1/-1;">
+            <button class="btn" type="submit">Save Teacher</button>
+            <button class="btn secondary" type="button" id="resetTeacher">Reset</button>
+          </div>
+        </form>
+        <p id="teacherStatus" class="status"></p>
+      </section>
+      <section class="card">
+        <h2>Teacher List</h2>
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>School</th><th>Department</th><th>Subject</th><th>Action</th></tr>
+          </thead>
+          <tbody id="teacherRows"></tbody>
+        </table>
+      </section>
+    </main>
+    <script type="module" src="./teachers.js"></script>
+  </body>
+</html>

@@ -6,18 +6,20 @@ import {
   signOut,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore,
-  collection,
   addDoc,
+  collection,
+  doc,
   getDoc,
   getDocs,
-  doc,
-  query,
-  where,
+  getFirestore,
+  onSnapshot,
   orderBy,
+  query,
   serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyC6tZOGFOpiNed6FtyMMpNqA7Bdtt47M_o",
@@ -25,8 +27,7 @@ const firebaseConfig = {
   projectId: "bts-tpa-form",
   storageBucket: "bts-tpa-form.firebasestorage.app",
   messagingSenderId: "548724875939",
-  appId: "1:548724875939:web:69a9f1a152a8771c325516"
-};
+  appId: "1:548724875939:web:69a9f1a152a8771c325516",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -34,19 +35,21 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 export {
-  app,
-  auth,
-  db,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  collection,
   addDoc,
+  auth,
+  collection,
+  db,
+  doc,
   getDoc,
   getDocs,
-  doc,
-  query,
-  where,
+  onAuthStateChanged,
+  onSnapshot,
   orderBy,
+  query,
   serverTimestamp,
+  setDoc,
+  signInWithEmailAndPassword,
+  signOut,
+  updateDoc,
+  where,
 };

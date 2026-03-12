@@ -1,178 +1,21 @@
-<!DOCTYPE html>
-<html lang="ms">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BTS-TPA 2.0 — Borang Penilaian + Rubrik</title>
-  <link rel="stylesheet" href="./styles.css" />
-</head>
-<body class="tpa-body">
-  <header class="tpa-toolbar no-print">
-    <div class="tpa-toolbar-inner">
-      <div class="tpa-toolbar-text">
-        <h1>BTS-TPA 2.0 — Borang Penilaian + Rubrik (Wording Tepat • Lengkap)</h1>
-        <p>Skala 1–5 berpandukan rubrik; klik “i” untuk deskriptor penuh atau halakan tetikus pada pilihan 1–5 untuk ringkasan.</p>
-      </div>
-      <div class="tpa-toolbar-actions">
-        <button id="btnSave" class="tpa-btn">Simpan Draf</button>
-        <button id="btnLoad" class="tpa-btn tpa-btn-secondary">Muat Draf</button>
-        <button id="btnJSON" class="tpa-btn tpa-btn-success">Eksport JSON</button>
-        <button id="btnCSV" class="tpa-btn tpa-btn-warning">Eksport CSV</button>
-        <button id="btnSubmit" class="tpa-btn tpa-btn-accent">Hantar</button>
-        <button type="button" class="tpa-btn" onclick="window.print()">Cetak</button>
-        <a id="btnDashboard" class="tpa-btn tpa-btn-secondary" href="./dashboard.html">Dashboard</a>
-        <button id="btnLogout" class="tpa-btn tpa-btn-secondary" type="button">Log keluar</button>
-        <span id="authUser" class="tpa-user"></span>
-      </div>
-    </div>
-  </header>
-
-  <main class="tpa-main">
-    <section class="tpa-title-panel">
-      <div class="tpa-title-left">
-        <div class="tpa-title-text">
-          <p class="tpa-title-line">KEMENTERIAN PENDIDIKAN</p>
-          <p class="tpa-title-line">MINISTRY OF EDUCATION</p>
-          <p class="tpa-title-line">PENILAIAN PRESTASI GURU</p>
-          <p class="tpa-title-line">TEACHER PERFORMANCE APPRAISAL</p>
-        </div>
-      </div>
-      <div class="tpa-grade-card">
-        <p class="tpa-grade-note">Sila nyatakan jika Guru adalah LC, LP, LCT, CBT atau JPI pada ruangan Catatan.</p>
-        <table class="tpa-grade-table">
-          <thead>
-            <tr>
-              <th>Gred<br /><span>Grade</span></th>
-              <th>Peratus<br /><span>Percentage</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1 (Tidak Memuaskan)</td>
-              <td>Bawah 40</td>
-            </tr>
-            <tr>
-              <td>2 (Memuaskan)</td>
-              <td>40–50</td>
-            </tr>
-            <tr>
-              <td>3 (Baik)</td>
-              <td>51–70</td>
-            </tr>
-            <tr>
-              <td>4 (Sangat Baik)</td>
-              <td>71–90</td>
-            </tr>
-            <tr>
-              <td>5 (Cemerlang)</td>
-              <td>91 dan ke atas</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="tpa-metadata">
-      <h2 class="tpa-section-title">Butiran Pencerapan / Lesson Observation Details</h2>
-      <table class="tpa-metadata-table">
-        <tr>
-          <th>Nama Guru<br /><span>Teacher's Name</span></th>
-          <td colspan="3"><input id="metaTeacher" class="tpa-input" placeholder="Nama guru dinilai" /></td>
-        </tr>
-        <tr>
-          <th>Tahap / Aras</th>
-          <td><select id="metaLevel" class="tpa-input"><option value="" disabled selected>Pilih tahap…</option></select></td>
-          <th>Mata Pelajaran<br /><span>Subject</span></th>
-          <td><select id="metaSubject" class="tpa-input" disabled><option value="" disabled selected>Pilih subjek…</option></select></td>
-        </tr>
-        <tr>
-          <th>Penilai<br /><span>Evaluator</span></th>
-          <td><input id="metaEvaluator" class="tpa-input" placeholder="Nama penilai" /></td>
-          <th>Tarikh<br /><span>Date</span></th>
-          <td><input id="metaDate" type="date" class="tpa-input" /></td>
-        </tr>
-        <tr>
-          <th>Sekolah<br /><span>School</span></th>
-          <td><select id="metaSchool" class="tpa-input"><option value="" disabled selected>Pilih sekolah…</option></select></td>
-          <th>Kluster<br /><span>Cluster</span></th>
-          <td><select id="metaCluster" class="tpa-input"><option value="" disabled selected>Pilih/Select…</option></select></td>
-        </tr>
-        <tr>
-          <th>Kaedah Pembelajaran<br /><span>Mode of Learning</span></th>
-          <td><select id="metaMethod" class="tpa-input"><option value="" disabled selected>Pilih kaedah…</option></select></td>
-          <th>Tahun / Class</th>
-          <td><select id="metaClassYear" class="tpa-input"><option value="" disabled selected>Pilih/Select…</option></select></td>
-        </tr>
-        <tr>
-          <th>Nama Kelas<br /><span>Class Name</span></th>
-          <td><input id="metaClassName" class="tpa-input" placeholder="Contoh: 7B / 5 Cemerlang" /></td>
-          <th>Jumlah Pelajar<br /><span>Number of Students</span></th>
-          <td><input id="metaStudentCount" type="number" min="0" class="tpa-input" placeholder="cth: 28" /></td>
-        </tr>
-      </table>
-    </section>
-
-    <section class="tpa-guidance">
-      <h2 class="tpa-section-title">Panduan Ringkas</h2>
-      <ul>
-        <li>Skala: 1 = Tidak Memuaskan, 2 = Memuaskan, 3 = Baik, 4 = Sangat Baik, 5 = Cemerlang.</li>
-        <li>Klik <span class="tpa-info-pill">i</span> di sebelah kod untuk deskriptor penuh; halakan tetikus pada Gred 1–5 untuk ringkasan.</li>
-      </ul>
-    </section>
-
-    <div id="formContainer" class="tpa-section-list"></div>
-
-    <section class="tpa-summary">
-      <h2 class="tpa-section-title">Keputusan Ringkas</h2>
-      <table class="tpa-summary-table">
-        <tbody>
-          <tr>
-            <th>Purata Bahagian A</th>
-            <td id="avgA">–</td>
-          </tr>
-          <tr>
-            <th>Purata Bahagian B</th>
-            <td id="avgB">–</td>
-          </tr>
-          <tr>
-            <th>Purata Bahagian C</th>
-            <td id="avgC">–</td>
-          </tr>
-          <tr>
-            <th>Purata Keseluruhan</th>
-            <td id="avgAll">–</td>
-          </tr>
-        </tbody>
-      </table>
-      <p id="gradeAll" class="tpa-summary-grade"></p>
-    </section>
-
-    <p class="tpa-footnote">Deskriptor rubrik dipetik daripada “Handbook BTS-TPA 2.0 January 2021”.</p>
-  </main>
-
-  <dialog id="rubricModal" class="tpa-dialog">
-    <form method="dialog" class="tpa-dialog-form">
-      <div class="tpa-dialog-header">
-        <div>
-          <h3 id="rubricTitle">Rubrik</h3>
-          <p id="rubricSubtitle"></p>
-        </div>
-        <button class="tpa-btn tpa-btn-secondary">Tutup</button>
-      </div>
-      <div class="tpa-dialog-body">
-        <table class="tpa-rubric-table">
-          <thead>
-            <tr>
-              <th>Gred</th>
-              <th>Deskriptor</th>
-            </tr>
-          </thead>
-          <tbody id="rubricBody"></tbody>
-        </table>
-      </div>
-    </form>
-  </dialog>
-
-  <script type="module" src="./app.js" defer></script>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TPA Landing</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <nav id="topNav"></nav>
+    <main class="container">
+      <section class="card">
+        <h1>Teacher Performance Appraisal</h1>
+        <p>Use the menu below to access TPA modules based on your role.</p>
+        <div id="landingMenu" class="grid cards"></div>
+        <p id="landingStatus" class="status"></p>
+      </section>
+    </main>
+    <script type="module" src="./index.js"></script>
+  </body>
 </html>
